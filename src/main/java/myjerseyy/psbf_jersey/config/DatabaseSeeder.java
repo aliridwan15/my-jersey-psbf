@@ -1,5 +1,6 @@
 package myjerseyy.psbf_jersey.config;
 
+import myjerseyy.psbf_jersey.entity.Address;
 import myjerseyy.psbf_jersey.entity.Brand;
 import myjerseyy.psbf_jersey.entity.Jersey;
 import myjerseyy.psbf_jersey.entity.League;
@@ -7,13 +8,16 @@ import myjerseyy.psbf_jersey.entity.Order;
 import myjerseyy.psbf_jersey.entity.OrderItem;
 import myjerseyy.psbf_jersey.entity.OrderStatus;
 import myjerseyy.psbf_jersey.entity.PromoCode;
+import myjerseyy.psbf_jersey.entity.Shipment;
 import myjerseyy.psbf_jersey.entity.Team;
 import myjerseyy.psbf_jersey.entity.User;
+import myjerseyy.psbf_jersey.repository.AddressRepository;
 import myjerseyy.psbf_jersey.repository.BrandRepository;
 import myjerseyy.psbf_jersey.repository.JerseyRepository;
 import myjerseyy.psbf_jersey.repository.LeagueRepository;
 import myjerseyy.psbf_jersey.repository.OrderRepository;
 import myjerseyy.psbf_jersey.repository.PromoCodeRepository;
+import myjerseyy.psbf_jersey.repository.ShipmentRepository;
 import myjerseyy.psbf_jersey.repository.TeamRepository;
 import myjerseyy.psbf_jersey.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
@@ -23,6 +27,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class DatabaseSeeder implements CommandLineRunner {
@@ -34,12 +39,15 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final TeamRepository teamRepository;
     private final BrandRepository brandRepository;
     private final PromoCodeRepository promoCodeRepository;
+    private final ShipmentRepository shipmentRepository;
+    private final AddressRepository addressRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DatabaseSeeder(UserRepository userRepository, 
                          JerseyRepository jerseyRepository, OrderRepository orderRepository,
                          LeagueRepository leagueRepository, TeamRepository teamRepository,
                          BrandRepository brandRepository, PromoCodeRepository promoCodeRepository,
+                         ShipmentRepository shipmentRepository, AddressRepository addressRepository,
                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jerseyRepository = jerseyRepository;
@@ -48,6 +56,8 @@ public class DatabaseSeeder implements CommandLineRunner {
         this.teamRepository = teamRepository;
         this.brandRepository = brandRepository;
         this.promoCodeRepository = promoCodeRepository;
+        this.shipmentRepository = shipmentRepository;
+        this.addressRepository = addressRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -422,6 +432,9 @@ public class DatabaseSeeder implements CommandLineRunner {
 
     private void seedOrders() {
         orderRepository.deleteAll();
+        shipmentRepository.deleteAll();
+
+        seedAddresses();
 
         List<User> customers = userRepository.findAll().stream()
                 .filter(u -> "CUSTOMER".equals(u.getRole()))
@@ -436,6 +449,8 @@ public class DatabaseSeeder implements CommandLineRunner {
         if (customers.isEmpty() || jerseys.size() < 3) {
             return;
         }
+        
+        fixMissingShipments();
         
         System.out.println("=== Seed Orders: Found " + promos.size() + " active promo codes ===");
         for (PromoCode p : promos) {
@@ -461,9 +476,12 @@ public class DatabaseSeeder implements CommandLineRunner {
         };
 
         int[] promoIndices = {0, 1, -1, 2, 3, -1, 4, -1, 0, 1, -1, 2, -1, 3, -1};
+        String[] couriers = {"JNE Express", "SiCepat", "J&T Express", "Pos Indonesia", "TIKI"};
 
         String[] sizes = {"S", "M", "L", "XL"};
         LocalDateTime baseDate = LocalDateTime.of(2024, 3, 1, 10, 0);
+
+        int shipmentCount = 0;
 
         for (int i = 0; i < orderConfigs.length; i++) {
             int[] config = orderConfigs[i];
@@ -526,9 +544,85 @@ public class DatabaseSeeder implements CommandLineRunner {
             }
             
             orderRepository.save(order);
+
+            if (status == OrderStatus.PROCESSING || status == OrderStatus.SHIPPED || status == OrderStatus.DELIVERED) {
+                Shipment shipment = new Shipment();
+                shipment.setOrder(order);
+                shipment.setShippingCost(15000.0 + (int)(Math.random() * 35000));
+                
+                User customer = order.getCustomer();
+                var addresses = addressRepository.findByUserId(customer.getId());
+                if (!addresses.isEmpty()) {
+                    shipment.setAddress(addresses.get(0));
+                }
+                
+                if (status == OrderStatus.PROCESSING) {
+                    shipment.setStatus(OrderStatus.PROCESSING);
+                    shipment.setCourierName(null);
+                    shipment.setTrackingNumber(null);
+                } else {
+                    shipment.setCourierName(couriers[(int)(Math.random() * couriers.length)]);
+                    String tracking = "TRK" + System.currentTimeMillis() + String.format("%02d", i);
+                    shipment.setTrackingNumber(tracking);
+                    
+                    if (status == OrderStatus.SHIPPED) {
+                        shipment.setStatus(OrderStatus.SHIPPED);
+                    } else if (status == OrderStatus.DELIVERED) {
+                        shipment.setStatus(OrderStatus.DELIVERED);
+                    }
+                }
+                
+                shipmentRepository.save(shipment);
+                shipmentCount++;
+            }
         }
 
         System.out.println("=== Database Seeder: 15 Orders berhasil diinsert ===");
+        System.out.println("=== Database Seeder: " + shipmentCount + " Shipments berhasil diinsert ===");
+    }
+
+    private void seedAddresses() {
+        if (addressRepository.count() > 0) {
+            return;
+        }
+        
+        List<User> customers = userRepository.findAll().stream()
+                .filter(u -> "CUSTOMER".equals(u.getRole()))
+                .toList();
+
+        String[][] addressData = {
+            {"Rumah Bandung", "Jl. Braga No. 123, Bandung, 40111, Jawa Barat"},
+            {"Kantor Surabaya", "Jl. Tunjungan No. 45, Surabaya, 60261, Jawa Timur"},
+            {"Rumah Medan", "Jl. Gatot Subroto No. 88, Medan, 20159, Sumatera Utara"},
+            {"Kos Yogyakarta", "Jl. Malioboro No. 56, Yogyakarta, 55111, DI Yogyakarta"},
+            {"Rumah Semarang", "Jl. Pandanaran No. 77, Semarang, 50134, Jawa Tengah"},
+            {"Apartemen Makassar", "Jl. Pettarani No. 99, Makassar, 90111, Sulawesi Selatan"},
+            {"Rumah Palembang", "Jl. Merdeka No. 10, Palembang, 30111, Sumatera Selatan"},
+            {"Kos Padang", "Jl. Hayam Wuruk No. 22, Padang, 25111, Sumatera Barat"},
+            {"Villa Denpasar", "Jl. Sunset Road No. 33, Denpasar, 80111, Bali"},
+            {"Rumah Bogor", "Jl. Pajajaran No. 44, Bogor, 16151, Jawa Barat"},
+            {"Kos Malang", "Jl. Kawi No. 55, Malang, 65111, Jawa Timur"},
+            {"Rumah Solo", "Jl. Slamet Riyadi No. 66, Solo, 57111, Jawa Tengah"},
+            {"Apartemen Samarinda", "Jl. AW Syahranie No. 77, Samarinda, 75119, Kalimantan Timur"},
+            {"Rumah Pekanbaru", "Jl. Sudirman No. 88, Pekanbaru, 28111, Riau"},
+        };
+
+        int idx = 0;
+        for (User customer : customers) {
+            if (idx < addressData.length) {
+                Address addr = new Address();
+                addr.setUser(customer);
+                addr.setTitle(addressData[idx][0]);
+                addr.setFullAddress(addressData[idx][1]);
+                addr.setCity(addressData[idx][1].split(", ")[1]);
+                addr.setPostalCode(addressData[idx][1].split(", ")[2]);
+                addr.setIsDefault(true);
+                addressRepository.save(addr);
+                idx++;
+            }
+        }
+        
+        System.out.println("=== Database Seeder: " + idx + " Addresses berhasil diinsert ===");
     }
 
     private Double calculateTotalPrice(Order order) {
@@ -537,6 +631,43 @@ public class DatabaseSeeder implements CommandLineRunner {
             total += item.getPrice() * item.getQuantity();
         }
         return total;
+    }
+
+    private void fixMissingShipments() {
+        List<Order> ordersNeedingShipment = orderRepository.findAll().stream()
+                .filter(o -> {
+                    OrderStatus s = o.getStatus();
+                    return s == OrderStatus.PROCESSING || s == OrderStatus.SHIPPED || 
+                           s == OrderStatus.DELIVERED || s == OrderStatus.RETURNED;
+                })
+                .toList();
+
+        int fixedCount = 0;
+        for (Order order : ordersNeedingShipment) {
+            Optional<Shipment> existingShipment = shipmentRepository.findByOrderId(order.getId());
+            if (existingShipment.isEmpty()) {
+                Shipment shipment = new Shipment();
+                shipment.setOrder(order);
+                shipment.setStatus(order.getStatus());
+                shipment.setShippingCost(25000.0);
+                
+                if (order.getStatus() == OrderStatus.PROCESSING) {
+                    shipment.setCourierName(null);
+                    shipment.setTrackingNumber(null);
+                } else {
+                    shipment.setCourierName("JNE Express");
+                    shipment.setTrackingNumber("TRK" + System.currentTimeMillis() + order.getId());
+                }
+                
+                shipmentRepository.save(shipment);
+                fixedCount++;
+                System.out.println("  [FIX] Created missing shipment for Order #" + order.getId());
+            }
+        }
+        
+        if (fixedCount > 0) {
+            System.out.println("=== Database Seeder: Fixed " + fixedCount + " missing shipments ===");
+        }
     }
 
     private void seedPromoCodes() {

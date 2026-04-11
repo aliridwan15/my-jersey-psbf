@@ -36,6 +36,9 @@ public class Order {
     @Column(name = "final_price")
     private Double finalPrice;
 
+    @Transient
+    private Shipment shipment;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
@@ -104,6 +107,14 @@ public class Order {
 
     public void setFinalPrice(Double finalPrice) {
         this.finalPrice = finalPrice;
+    }
+
+    public Shipment getShipment() {
+        return shipment;
+    }
+
+    public void setShipment(Shipment shipment) {
+        this.shipment = shipment;
     }
 
     public List<OrderItem> getItems() {

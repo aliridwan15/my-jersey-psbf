@@ -2,8 +2,10 @@ package myjerseyy.psbf_jersey.controller;
 
 import myjerseyy.psbf_jersey.entity.Order;
 import myjerseyy.psbf_jersey.entity.OrderStatus;
+import myjerseyy.psbf_jersey.entity.Shipment;
 import myjerseyy.psbf_jersey.entity.User;
 import myjerseyy.psbf_jersey.repository.OrderRepository;
+import myjerseyy.psbf_jersey.repository.ShipmentRepository;
 import myjerseyy.psbf_jersey.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -13,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.servlet.http.HttpSession;
 import java.time.LocalDate;
@@ -27,6 +30,9 @@ public class OrderController {
 
     @Autowired
     private OrderRepository orderRepository;
+    
+    @Autowired
+    private ShipmentRepository shipmentRepository;
     
     @Autowired
     private UserRepository userRepository;
@@ -93,7 +99,7 @@ public class OrderController {
         model.addAttribute("hasPrevious", orderPage.hasPrevious());
         model.addAttribute("showPagination", orderPage.getTotalElements() > 10);
         
-        return "kelola-order";
+        return "kelola-transaksi";
     }
 
     @PostMapping("/update-status")
@@ -107,6 +113,38 @@ public class OrderController {
         });
         
         return "redirect:/admin/orders";
+    }
+
+    @PostMapping("/process-shipping/{orderId}")
+    public String processShipping(
+            @PathVariable Long orderId,
+            RedirectAttributes redirectAttributes) {
+        
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        
+        if (orderOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Order tidak ditemukan!");
+            return "redirect:/admin/orders";
+        }
+        
+        Order order = orderOpt.get();
+        
+        if (order.getStatus() != OrderStatus.CONFIRMED) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Hanya order dengan status CONFIRMED yang bisa diproses!");
+            return "redirect:/admin/orders";
+        }
+        
+        order.setStatus(OrderStatus.PROCESSING);
+        
+        Shipment shipment = new Shipment();
+        shipment.setOrder(order);
+        shipment.setStatus(OrderStatus.PROCESSING);
+        
+        shipmentRepository.save(shipment);
+        orderRepository.save(order);
+        
+        redirectAttributes.addFlashAttribute("successMessage", "Order berhasil diproses! Silakan input resi di halaman Kelola Pengiriman.");
+        return "redirect:/admin/shipments";
     }
 
     @GetMapping("/delete/{id}")
