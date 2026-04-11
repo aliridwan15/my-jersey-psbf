@@ -108,13 +108,14 @@
                                     <th class="px-6 py-4 text-sm font-semibold tracking-wide w-48">ID & Foto</th>
                                     <th class="px-6 py-4 text-sm font-semibold tracking-wide">Username</th>
                                     <th class="px-6 py-4 text-sm font-semibold tracking-wide">Nama Lengkap</th>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide">Gender</th>
                                     <th class="px-6 py-4 text-sm font-semibold tracking-wide">Alamat</th>
                                     <th class="px-6 py-4 text-sm font-semibold tracking-wide text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 <tr th:if="${users == null or users.content.isEmpty()}">
-                                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">Belum ada data pengguna yang ditambahkan.</td>
+                                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">Belum ada data pengguna yang ditambahkan.</td>
                                 </tr>
                                 <tr th:each="user : ${users.content}" class="table-row hover:bg-gray-50 transition-colors">
                                     <td class="px-6 py-3">
@@ -132,11 +133,18 @@
                                     </td>
                                     <td class="px-6 py-3 text-sm text-gray-700" th:text="${user.username}">username</td>
                                     <td class="px-6 py-3 font-medium text-gray-800" th:text="${user.name}">Nama Lengkap</td>
+                                    <td class="px-6 py-3 text-sm text-gray-600" th:text="${user.gender != null and user.gender != '' ? user.gender : '-'}">-</td>
                                     <td class="px-6 py-3 text-sm text-gray-600 max-w-xs truncate" th:text="${user.address != null and user.address != '' ? user.address : '-'}">Alamat</td>
                                     <td class="px-6 py-3">
                                         <div class="flex items-center justify-center gap-2">
+                                            <a th:href="@{/admin/users/{userId}/addresses(userId=${user.id})}" class="flex items-center justify-center w-8 h-8 bg-accent/10 text-accent rounded-lg hover:bg-accent hover:text-white transition-colors border border-accent/20" title="Kelola Alamat">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                </svg>
+                                            </a>
                                             <button type="button" 
-                                                    th:attr="data-id=${user.id}, data-username=${user.username}, data-name=${user.name}, data-address=${user.address}" 
+                                                    th:attr="data-id=${user.id}, data-username=${user.username}, data-name=${user.name}, data-address=${user.address}, data-gender=${user.gender}" 
                                                     onclick="openEditModal(this)"
                                                     class="flex items-center justify-center w-8 h-8 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-secondary hover:text-gray-800 transition-colors border border-yellow-200">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
@@ -216,6 +224,14 @@
                     <input type="text" name="name" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="Masukkan nama lengkap">
                 </div>
                 <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Jenis Kelamin</label>
+                    <select name="gender" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-gray-50 focus:bg-white transition-colors">
+                        <option value="">Pilih Jenis Kelamin</option>
+                        <option value="Laki-Laki">Laki-Laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
+                </div>
+                <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Password</label>
                     <input type="password" name="password" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="Masukkan password (default: password123)">
                     <p class="text-[11px] text-gray-400 mt-1 italic">*Kosongkan untuk menggunakan password default</p>
@@ -250,6 +266,14 @@
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Nama Lengkap</label>
                     <input type="text" name="name" id="editName" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:outline-none bg-gray-50 focus:bg-white transition-colors" placeholder="Masukkan nama lengkap">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Jenis Kelamin</label>
+                    <select name="gender" id="editGender" class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-yellow-400 focus:outline-none bg-gray-50 focus:bg-white transition-colors">
+                        <option value="">Pilih Jenis Kelamin</option>
+                        <option value="Laki-Laki">Laki-Laki</option>
+                        <option value="Perempuan">Perempuan</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-2">Password Baru</label>
@@ -324,6 +348,7 @@
             document.getElementById('editUsername').value = button.getAttribute('data-username');
             document.getElementById('editName').value = button.getAttribute('data-name');
             document.getElementById('editAddress').value = button.getAttribute('data-address') || '';
+            document.getElementById('editGender').value = button.getAttribute('data-gender') || '';
             openModal('editModal');
         }
         

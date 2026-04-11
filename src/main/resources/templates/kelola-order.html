@@ -246,6 +246,7 @@
             </div>
         </div>
         
+        </div>
     </main>
 
     <div id="editModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm hidden">
@@ -408,7 +409,7 @@
                                 <tr th:each="item : ${order.items}" class="hover:bg-gray-50 transition-colors">
                                     <td class="px-4 py-3">
                                         <p class="text-sm font-medium text-gray-800" th:text="${item.jersey.name}">Jersey Name</p>
-                                        <p class="text-xs text-gray-500" th:text="${item.jersey.teamName}">Team Name</p>
+                                        <p class="text-xs text-gray-500" th:text="${item.jersey.team != null ? item.jersey.team.name : '-'}">Team Name</p>
                                     </td>
                                     <td class="px-4 py-3 text-center">
                                         <span class="inline-flex items-center justify-center w-8 h-8 bg-accent/10 text-accent text-sm font-bold rounded" th:text="${item.size}">L</span>

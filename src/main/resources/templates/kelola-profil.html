@@ -315,6 +315,26 @@
                                 </div>
                             </div>
                             
+                            <!-- Gender -->
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-600 mb-2">Jenis Kelamin</label>
+                                <div class="flex items-center gap-3">
+                                    <button type="button" onclick="toggleEdit('gender')" class="p-2 hover:bg-yellow-50 rounded-lg transition-colors field-editable" title="Klik untuk edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        </svg>
+                                    </button>
+                                    <div id="genderDisplay" class="flex-1 px-4 py-2.5 bg-gray-50 rounded-lg text-gray-800">
+                                        [[${currentUser.gender != null and currentUser.gender != '' ? currentUser.gender : '-'}]]
+                                    </div>
+                                    <select name="gender" id="genderInput" class="edit-input flex-1 px-4 py-2.5 border-2 border-warning rounded-lg text-gray-800 focus:outline-none focus:border-primary hidden">
+                                        <option value="">Pilih Jenis Kelamin</option>
+                                        <option value="Laki-Laki" th:selected="${currentUser.gender == 'Laki-Laki'}">Laki-Laki</option>
+                                        <option value="Perempuan" th:selected="${currentUser.gender == 'Perempuan'}">Perempuan</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
                             <!-- Save Button -->
                             <div class="flex justify-end mt-4" id="saveButtonContainer">
                                 <button type="button" onclick="submitProfile()" class="bg-success text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:opacity-90 transition-colors hidden">
@@ -666,16 +686,28 @@
             const inputEl = document.getElementById(field + 'Input');
             
             if (inputEl.classList.contains('hidden')) {
-                inputEl.value = displayEl.textContent.trim();
+                if (inputEl.tagName === 'SELECT') {
+                    inputEl.value = displayEl.textContent.trim() === '-' ? '' : displayEl.textContent.trim();
+                } else {
+                    inputEl.value = displayEl.textContent.trim();
+                }
                 displayEl.classList.add('hidden');
                 inputEl.classList.remove('hidden');
-                inputEl.classList.add('flex');
+                if (inputEl.tagName !== 'SELECT') {
+                    inputEl.classList.add('flex');
+                }
                 inputEl.focus();
                 showSaveButton();
             } else {
-                displayEl.textContent = inputEl.value || inputEl.placeholder;
+                if (inputEl.tagName === 'SELECT') {
+                    displayEl.textContent = inputEl.value || '-';
+                } else {
+                    displayEl.textContent = inputEl.value || inputEl.placeholder;
+                }
                 inputEl.classList.add('hidden');
-                inputEl.classList.remove('flex');
+                if (inputEl.tagName !== 'SELECT') {
+                    inputEl.classList.remove('flex');
+                }
                 displayEl.classList.remove('hidden');
             }
         }
@@ -706,6 +738,12 @@
                 input.addEventListener('input', showSaveButton);
             }
         });
+        
+        // Handle gender select change
+        const genderInput = document.getElementById('genderInput');
+        if (genderInput) {
+            genderInput.addEventListener('change', showSaveButton);
+        }
         
         // ========== PASSWORD SECTION ==========
         const passwordFields = document.getElementById('passwordFields');

@@ -97,6 +97,7 @@ public class AuthController {
             @RequestParam("username") String username,
             @RequestParam("password") String password,
             @RequestParam(value = "address", required = false) String address,
+            @RequestParam(value = "gender", required = false) String gender,
             RedirectAttributes redirectAttributes) {
         
         if (userRepository.findByUsername(username).isPresent()) {
@@ -111,6 +112,7 @@ public class AuthController {
         newUser.setName(name);
         newUser.setRole("CUSTOMER");
         newUser.setAddress(address != null ? address : "");
+        newUser.setGender(gender != null ? gender : "");
         
         userRepository.save(newUser);
         

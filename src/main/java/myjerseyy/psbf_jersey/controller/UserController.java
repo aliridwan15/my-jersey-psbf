@@ -59,12 +59,14 @@ public class UserController {
             @RequestParam("name") String name,
             @RequestParam(value = "password", required = false) String password,
             @RequestParam(value = "address", required = false) String address,
+            @RequestParam(value = "gender", required = false) String gender,
             RedirectAttributes redirectAttributes) {
 
         if (id != null && id > 0) {
             userRepository.findById(id).ifPresent(user -> {
                 user.setName(name);
                 user.setAddress(address != null ? address : "");
+                user.setGender(gender != null ? gender : "");
                 if (password != null && !password.isEmpty()) {
                     user.setPassword(passwordEncoder.encode(password));
                 }
@@ -82,6 +84,7 @@ public class UserController {
             newUser.setName(name);
             newUser.setRole("CUSTOMER");
             newUser.setAddress(address != null ? address : "");
+            newUser.setGender(gender != null ? gender : "");
             if (password != null && !password.isEmpty()) {
                 newUser.setPassword(passwordEncoder.encode(password));
             } else {

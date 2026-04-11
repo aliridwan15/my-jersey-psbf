@@ -171,6 +171,7 @@ public class ProfileController {
     public String updateProfile(@RequestParam("name") String name,
                                 @RequestParam("username") String username,
                                 @RequestParam(value = "address", required = false) String address,
+                                @RequestParam(value = "gender", required = false) String gender,
                                 HttpSession session) {
         User user = getUserFromSession(session);
         
@@ -180,6 +181,7 @@ public class ProfileController {
             if (address != null) {
                 user.setAddress(address);
             }
+            user.setGender(gender != null ? gender : "");
             session.setAttribute("username", username);
             userRepository.save(user);
         }
