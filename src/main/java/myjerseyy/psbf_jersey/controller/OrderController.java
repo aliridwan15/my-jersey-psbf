@@ -1,0 +1,117 @@
+package myjerseyy.psbf_jersey.controller;
+
+import myjerseyy.psbf_jersey.entity.Order;
+import myjerseyy.psbf_jersey.entity.OrderStatus;
+import myjerseyy.psbf_jersey.entity.User;
+import myjerseyy.psbf_jersey.repository.OrderRepository;
+import myjerseyy.psbf_jersey.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpSession;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Controller
+@RequestMapping("/admin/orders")
+public class OrderController {
+
+    @Autowired
+    private OrderRepository orderRepository;
+    
+    @Autowired
+    private UserRepository userRepository;
+
+    @GetMapping
+    public String ordersPage(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) LocalDate date,
+            @RequestParam(required = false) String filterToday,
+            @RequestParam(defaultValue = "0") int page,
+            Model model,
+            HttpSession session) {
+        
+        model.addAttribute("activePage", "orders");
+        model.addAttribute("pageTitle", "Kelola Order");
+        model.addAttribute("statuses", OrderStatus.values());
+        
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId != null) {
+            Optional<User> currentUser = userRepository.findById(userId);
+            currentUser.ifPresent(user -> model.addAttribute("currentUser", user));
+        }
+        
+        final LocalDate filterDate;
+        if (filterToday != null) {
+            filterDate = LocalDate.now();
+        } else {
+            filterDate = date;
+        }
+        
+        Pageable pageable = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "orderDate"));
+        Page<Order> orderPage = orderRepository.findAll(pageable);
+        
+        List<Order> orders = orderPage.getContent();
+        
+        if (status != null && !status.isEmpty()) {
+            try {
+                OrderStatus statusEnum = OrderStatus.valueOf(status);
+                orders = orders.stream()
+                        .filter(o -> o.getStatus() == statusEnum)
+                        .collect(Collectors.toList());
+            } catch (IllegalArgumentException e) {
+                // Invalid status, ignore filter
+            }
+        }
+        
+        if (filterDate != null) {
+            orders = orders.stream()
+                    .filter(o -> o.getOrderDate().toLocalDate().equals(filterDate))
+                    .collect(Collectors.toList());
+        }
+        
+        model.addAttribute("orders", orders);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("selectedDate", filterDate);
+        model.addAttribute("filterToday", filterToday);
+        model.addAttribute("currentPage", orderPage.getNumber());
+        model.addAttribute("totalPages", orderPage.getTotalPages());
+        model.addAttribute("totalItems", orderPage.getTotalElements());
+        model.addAttribute("pageSize", orderPage.getSize());
+        model.addAttribute("isFirst", orderPage.isFirst());
+        model.addAttribute("isLast", orderPage.isLast());
+        model.addAttribute("hasNext", orderPage.hasNext());
+        model.addAttribute("hasPrevious", orderPage.hasPrevious());
+        model.addAttribute("showPagination", orderPage.getTotalElements() > 10);
+        
+        return "kelola-order";
+    }
+
+    @PostMapping("/update-status")
+    public String updateStatus(
+            @RequestParam Long orderId,
+            @RequestParam OrderStatus status) {
+        
+        orderRepository.findById(orderId).ifPresent(order -> {
+            order.setStatus(status);
+            orderRepository.save(order);
+        });
+        
+        return "redirect:/admin/orders";
+    }
+
+    @GetMapping("/delete/{id}")
+    public String deleteOrder(@PathVariable Long id) {
+        orderRepository.deleteById(id);
+        return "redirect:/admin/orders";
+    }
+}

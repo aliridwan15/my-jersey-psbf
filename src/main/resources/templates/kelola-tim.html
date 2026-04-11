@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Tim - myjersey Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#BD114A',
+                        secondary: '#FAE251',
+                        accent: '#547792',
+                        success: '#7FB77E',
+                    },
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        
+        .sidebar-menu-item:hover { background-color: rgba(255, 255, 255, 0.15); }
+        .sidebar-menu-item.active { background-color: rgba(255, 255, 255, 0.25); }
+        
+        .profile-dropdown { transform-origin: bottom; transition: all 0.15s ease-out; }
+        .profile-dropdown.hidden { opacity: 0; transform: scaleY(0.95); }
+        .profile-dropdown:not(.hidden) { opacity: 1; transform: scaleY(1); }
+        
+        .table-row:hover { background-color: rgba(189, 17, 74, 0.03); }
+        
+        .modal-overlay { transition: opacity 0.2s ease-out; }
+        .modal-overlay.hidden { opacity: 0; pointer-events: none; }
+        .modal-overlay:not(.hidden) { opacity: 1; }
+        
+        .modal-content { transition: all 0.2s ease-out; }
+        .modal-overlay.hidden .modal-content { transform: scale(0.95); opacity: 0; }
+        .modal-overlay:not(.hidden) .modal-content { transform: scale(1); opacity: 1; }
+        
+        #sidebar { transition: transform 300ms ease-in-out; }
+        #mainContent { transition: margin-left 300ms ease-in-out; }
+        
+        .burger-btn { transition: all 0.2s ease; }
+        .burger-btn:hover { background-color: rgba(189, 17, 74, 0.1); }
+        .burger-btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="bg-gray-100 font-poppins">
+    
+    <!-- Main Container -->
+    <div class="flex min-h-screen">
+        
+        <!-- Sidebar Fragment -->
+        <aside th:replace="~{fragments/sidebar :: sidebar(activeMenu='team')}"></aside>
+        
+        <!-- ========== MAIN CONTENT ========== -->
+        <main id="mainContent" class="flex-1 ml-64 transition-all duration-300 ease-in-out">
+            
+            <!-- Header with Hamburger Menu -->
+            <header class="bg-[#EEEEEE] shadow-sm sticky top-0 z-40">
+                <div class="flex items-center px-6 py-4">
+                    <button id="burgerBtn" type="button" class="burger-btn flex items-center justify-center w-10 h-10 rounded-lg hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/30" aria-label="Toggle Sidebar">
+                        <div class="flex flex-col items-center justify-center space-y-1.5">
+                            <span class="block w-6 h-0.5 bg-[#BD114A] rounded-full"></span>
+                            <span class="block w-6 h-0.5 bg-[#BD114A] rounded-full"></span>
+                            <span class="block w-6 h-0.5 bg-[#BD114A] rounded-full"></span>
+                        </div>
+                    </button>
+                    <div class="ml-4">
+                        <h2 class="text-lg font-semibold text-gray-800">Kelola Tim</h2>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Content -->
+            <div class="p-6">
+                
+                <!-- Alert Messages -->
+                <div th:if="${successMessage}" class="mb-4 p-4 bg-success/10 text-success rounded-lg text-sm font-medium">
+                    <span th:text="${successMessage}"></span>
+                </div>
+                <div th:if="${errorMessage}" class="mb-4 p-4 bg-red-100 text-red-600 rounded-lg text-sm font-medium">
+                    <span th:text="${errorMessage}"></span>
+                </div>
+                
+                <!-- Actions -->
+                <div class="mb-4 flex justify-end">
+                    <button onclick="openAddModal()" class="flex items-center gap-2 bg-primary hover:bg-pink-800 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                        Tambah Tim
+                    </button>
+                </div>
+                
+                <!-- Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-primary text-white">
+                                <tr>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide w-24">Logo</th>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide">Nama Tim</th>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide">Liga</th>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr th:if="${teams == null or teams.content.isEmpty()}">
+                                    <td colspan="4" class="px-6 py-8 text-center text-gray-500">Belum ada data tim yang ditambahkan.</td>
+                                </tr>
+                                <tr th:each="team : ${teams.content}" class="table-row hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-3">
+                                        <img th:if="${team.logo != null and not #strings.isEmpty(team.logo)}" 
+                                             th:src="${'data:image/jpeg;base64,' + team.logo}" 
+                                             class="h-12 w-12 object-contain rounded border border-gray-200 bg-white p-1 shadow-sm" 
+                                             alt="Logo" 
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                                        <div th:unless="${team.logo != null and not #strings.isEmpty(team.logo)}" class="h-12 w-12 bg-gray-100 rounded border border-gray-200 flex items-center justify-center text-[9px] font-bold text-gray-400 text-center shadow-sm">NO LOGO</div>
+                                    </td>
+                                    <td class="px-6 py-3 font-bold text-gray-800" th:text="${team.name}">Nama</td>
+                                    <td class="px-6 py-3 text-sm text-gray-600" th:text="${team.league != null ? team.league.name : '-'}">Liga</td>
+                                    <td class="px-6 py-3">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <button type="button" 
+                                                    th:attr="data-id=${team.id}, data-name=${team.name}, data-league=${team.league != null ? team.league.id : ''}, data-logo=${team.logo}" 
+                                                    onclick="editTeam(this)"
+                                                    class="flex items-center justify-center w-8 h-8 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-secondary hover:text-gray-800 transition-colors border border-yellow-200">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                            </button>
+                                            <button type="button" 
+                                                    th:attr="data-id=${team.id}, data-name=${team.name}" 
+                                                    onclick="confirmDelete(this)"
+                                                    class="flex items-center justify-center w-8 h-8 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors border border-red-100">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- Pagination -->
+                <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50" th:if="${totalPages > 1}">
+                    <div class="text-sm text-gray-600">
+                        <span>Halaman </span>
+                        <span th:text="${currentPage + 1}">1</span>
+                        <span> dari </span>
+                        <span th:text="${totalPages}">1</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <th:block th:if="${currentPage > 0}">
+                            <a th:href="@{/admin/teams(page=${currentPage - 1})}" class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-primary hover:text-white hover:border-primary transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                            </a>
+                        </th:block>
+                        <th:block th:if="${currentPage == 0}">
+                            <span class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-300 pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                            </span>
+                        </th:block>
+                        <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}" 
+                           th:href="@{/admin/teams(page=${i})}"
+                           class="w-9 h-9 flex items-center justify-center rounded-lg border text-sm font-medium transition-colors">
+                            <span th:text="${i + 1}">1</span>
+                        </a>
+                        <th:block th:if="${currentPage < totalPages - 1}">
+                            <a th:href="@{/admin/teams(page=${currentPage + 1})}" class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:bg-primary hover:text-white hover:border-primary transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                            </a>
+                        </th:block>
+                        <th:block th:if="${currentPage >= totalPages - 1}">
+                            <span class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-300 pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+                            </span>
+                        </th:block>
+                    </div>
+                </div>
+        </main>
+    </div>
+    
+    <!-- ========== ADD MODAL ========== -->
+    <div id="addModal" class="modal-overlay hidden fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden border-t-4 border-primary">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800">Tambah Tim</h3>
+                <button type="button" onclick="closeModal('addModal')" class="text-gray-400 hover:text-red-500 transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <form th:action="@{/admin/teams/save}" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Nama Tim</label>
+                    <input type="text" name="name" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-gray-50 focus:bg-white transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Liga</label>
+                    <select name="leagueId" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-gray-50 focus:bg-white transition-colors">
+                        <option value="">-- Pilih Liga --</option>
+                        <option th:each="league : ${leagues}" th:value="${league.id}" th:text="${league.name}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Upload Logo</label>
+                    <input type="file" name="file" accept="image/*" onchange="previewFile(this, 'addPreview')" class="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
+                    <div class="mt-3">
+                        <img id="addPreview" src="#" alt="Preview" class="hidden h-24 w-24 object-contain rounded-lg border border-gray-200 bg-white p-1">
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('addModal')" class="px-5 py-2.5 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 font-bold transition-colors">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 text-white bg-primary rounded-xl hover:bg-pink-800 font-bold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- ========== EDIT MODAL ========== -->
+    <div id="editModal" class="modal-overlay hidden fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden border-t-4 border-primary">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800">Edit Data Tim</h3>
+                <button type="button" onclick="closeModal('editModal')" class="text-gray-400 hover:text-red-500 transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <form th:action="@{/admin/teams/save}" method="POST" enctype="multipart/form-data" class="p-6 space-y-5">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <input type="hidden" name="id" id="editId">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Nama Tim</label>
+                    <input type="text" name="name" id="editName" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-gray-50 focus:bg-white transition-colors">
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Pilih Liga</label>
+                    <select name="leagueId" id="editLeague" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-gray-50 focus:bg-white transition-colors">
+                        <option value="">-- Pilih Liga --</option>
+                        <option th:each="league : ${leagues}" th:value="${league.id}" th:text="${league.name}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Upload Logo Baru</label>
+                    <input type="file" name="file" accept="image/*" onchange="previewFile(this, 'editPreview')" class="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer">
+                    <p class="text-[11px] text-gray-400 mt-2 italic">*Biarkan kosong jika tidak ingin mengubah logo.</p>
+                    <div class="mt-3">
+                        <img id="editPreview" src="#" alt="Preview" class="hidden h-24 w-24 object-contain rounded-lg border border-gray-200 bg-white p-1">
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('editModal')" class="px-5 py-2.5 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 font-bold transition-colors">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 text-white bg-primary rounded-xl hover:bg-pink-800 font-bold shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- ========== DELETE MODAL ========== -->
+    <div id="deleteModal" class="modal-overlay hidden fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden border-t-4 border-red-500">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Hapus Tim?</h3>
+                <p class="text-sm text-gray-600 mb-6">Apakah Anda yakin ingin menghapus tim "<span id="deleteName" class="font-semibold"></span>"? Tindakan ini tidak dapat dibatalkan.</p>
+                <form id="formDelete" method="GET" class="flex justify-center gap-3">
+                    <button type="button" onclick="closeModal('deleteModal')" class="px-5 py-2.5 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 font-bold transition-colors">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 text-white bg-red-500 rounded-xl hover:bg-red-600 font-bold shadow-md">Hapus</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // SIDEBAR TOGGLE
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const burgerBtn = document.getElementById('burgerBtn');
+        let sidebarOpen = true;
+        
+        burgerBtn.addEventListener('click', function() {
+            sidebarOpen = !sidebarOpen;
+            if (sidebarOpen) {
+                sidebar.style.transform = 'translateX(0)';
+                mainContent.style.marginLeft = '256px';
+            } else {
+                sidebar.style.transform = 'translateX(-100%)';
+                mainContent.style.marginLeft = '0';
+            }
+        });
+        
+        // MODAL FUNCTIONS
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+        
+        function openAddModal() {
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+        
+        // PREVIEW FILE
+        function previewFile(input, previewId) {
+            const preview = document.getElementById(previewId);
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.classList.remove('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.src = '#';
+                preview.classList.add('hidden');
+            }
+        }
+        
+        // EDIT
+        function editTeam(button) {
+            document.getElementById('editId').value = button.getAttribute('data-id');
+            document.getElementById('editName').value = button.getAttribute('data-name');
+            
+            const leagueId = button.getAttribute('data-league');
+            const editLeague = document.getElementById('editLeague');
+            editLeague.value = leagueId;
+            
+            const logoData = button.getAttribute('data-logo');
+            const editPreview = document.getElementById('editPreview');
+            if (logoData && logoData.length > 0) {
+                editPreview.src = 'data:image/jpeg;base64,' + logoData;
+                editPreview.classList.remove('hidden');
+            } else {
+                editPreview.classList.add('hidden');
+            }
+            
+            openModal('editModal');
+        }
+        
+        // DELETE
+        function confirmDelete(button) {
+            document.getElementById('deleteName').textContent = button.getAttribute('data-name');
+            document.getElementById('formDelete').action = '/admin/teams/delete/' + button.getAttribute('data-id');
+            openModal('deleteModal');
+        }
+        
+        // PROFILE DROPDOWN
+        const profileBtn = document.getElementById('profileBtn');
+        const profileDropdown = document.getElementById('profileDropdown');
+        const dropdownArrow = document.getElementById('dropdownArrow');
+        
+        profileBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            profileDropdown.classList.toggle('hidden');
+            dropdownArrow.classList.toggle('rotate-180');
+        });
+        
+        document.addEventListener('click', function() {
+            if (!profileDropdown.classList.contains('hidden')) {
+                profileDropdown.classList.add('hidden');
+                dropdownArrow.classList.remove('rotate-180');
+            }
+        });
+        
+        profileDropdown.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    </script>
+</body>
+</html>
