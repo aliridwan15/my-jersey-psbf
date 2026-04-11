@@ -58,7 +58,7 @@ public class OrderController {
         }
         
         Pageable pageable = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "orderDate"));
-        Page<Order> orderPage = orderRepository.findAll(pageable);
+        Page<Order> orderPage = orderRepository.findAllWithPromoCode(pageable);
         
         List<Order> orders = orderPage.getContent();
         

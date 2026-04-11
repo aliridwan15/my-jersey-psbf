@@ -6,18 +6,21 @@ import myjerseyy.psbf_jersey.entity.League;
 import myjerseyy.psbf_jersey.entity.Order;
 import myjerseyy.psbf_jersey.entity.OrderItem;
 import myjerseyy.psbf_jersey.entity.OrderStatus;
+import myjerseyy.psbf_jersey.entity.PromoCode;
 import myjerseyy.psbf_jersey.entity.Team;
 import myjerseyy.psbf_jersey.entity.User;
 import myjerseyy.psbf_jersey.repository.BrandRepository;
 import myjerseyy.psbf_jersey.repository.JerseyRepository;
 import myjerseyy.psbf_jersey.repository.LeagueRepository;
 import myjerseyy.psbf_jersey.repository.OrderRepository;
+import myjerseyy.psbf_jersey.repository.PromoCodeRepository;
 import myjerseyy.psbf_jersey.repository.TeamRepository;
 import myjerseyy.psbf_jersey.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -30,12 +33,13 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final LeagueRepository leagueRepository;
     private final TeamRepository teamRepository;
     private final BrandRepository brandRepository;
+    private final PromoCodeRepository promoCodeRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DatabaseSeeder(UserRepository userRepository, 
                          JerseyRepository jerseyRepository, OrderRepository orderRepository,
                          LeagueRepository leagueRepository, TeamRepository teamRepository,
-                         BrandRepository brandRepository,
+                         BrandRepository brandRepository, PromoCodeRepository promoCodeRepository,
                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jerseyRepository = jerseyRepository;
@@ -43,6 +47,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         this.leagueRepository = leagueRepository;
         this.teamRepository = teamRepository;
         this.brandRepository = brandRepository;
+        this.promoCodeRepository = promoCodeRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -50,12 +55,18 @@ public class DatabaseSeeder implements CommandLineRunner {
     public void run(String... args) {
         migratePlainTextPasswords();
         
+        if (promoCodeRepository.count() == 0) {
+            seedPromoCodes();
+        }
+        
         if (userRepository.count() == 0) {
             seedUsers();
             seedBrands();
             seedLeagues();
             seedTeams();
             seedJerseys();
+            seedOrders();
+        } else if (orderRepository.count() == 0) {
             seedOrders();
         }
     }
@@ -417,8 +428,18 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .toList();
 
         List<Jersey> jerseys = jerseyRepository.findAll();
+        List<PromoCode> promos = promoCodeRepository.findAll().stream()
+                .filter(p -> p.getIsActive() != null && p.getIsActive())
+                .sorted((a, b) -> a.getId().compareTo(b.getId()))
+                .toList();
+        
         if (customers.isEmpty() || jerseys.size() < 3) {
             return;
+        }
+        
+        System.out.println("=== Seed Orders: Found " + promos.size() + " active promo codes ===");
+        for (PromoCode p : promos) {
+            System.out.println("  Promo: " + p.getCode() + " (" + p.getDiscountPercent() + "%)");
         }
 
         int[][] orderConfigs = {
@@ -438,6 +459,8 @@ public class DatabaseSeeder implements CommandLineRunner {
             {13, 13, 1, OrderStatus.CONFIRMED.ordinal()},
             {14, 14, 2, OrderStatus.SHIPPED.ordinal()},
         };
+
+        int[] promoIndices = {0, 1, -1, 2, 3, -1, 4, -1, 0, 1, -1, 2, -1, 3, -1};
 
         String[] sizes = {"S", "M", "L", "XL"};
         LocalDateTime baseDate = LocalDateTime.of(2024, 3, 1, 10, 0);
@@ -487,7 +510,21 @@ public class DatabaseSeeder implements CommandLineRunner {
                 }
             }
 
-            order.setTotalPrice(calculateTotalPrice(order));
+            Double totalPrice = calculateTotalPrice(order);
+            order.setTotalPrice(totalPrice);
+            
+            int promoIdx = promoIndices[i];
+            if (promoIdx >= 0 && promos.size() > promoIdx) {
+                PromoCode promo = promos.get(promoIdx);
+                Double discountAmount = promo.calculateDiscount(totalPrice);
+                order.setPromoCode(promo);
+                order.setDiscountAmount(discountAmount);
+                order.setFinalPrice(totalPrice - discountAmount);
+            } else {
+                order.setDiscountAmount(0.0);
+                order.setFinalPrice(totalPrice);
+            }
+            
             orderRepository.save(order);
         }
 
@@ -500,5 +537,105 @@ public class DatabaseSeeder implements CommandLineRunner {
             total += item.getPrice() * item.getQuantity();
         }
         return total;
+    }
+
+    private void seedPromoCodes() {
+        LocalDate today = LocalDate.now();
+
+        PromoCode promo1 = new PromoCode();
+        promo1.setCampaignName("Promo Kemerdekaan");
+        promo1.setCode("MERDEKA17");
+        promo1.setDiscountPercent(17.0);
+        promo1.setMaxDiscount(50000.0);
+        promo1.setStartDate(today.minusDays(5));
+        promo1.setEndDate(today.plusDays(30));
+        promo1.setIsActive(true);
+        promoCodeRepository.save(promo1);
+
+        PromoCode promo2 = new PromoCode();
+        promo2.setCampaignName("Diskon Akhir Tahun");
+        promo2.setCode("TAHUNBARU2025");
+        promo2.setDiscountPercent(25.0);
+        promo2.setMaxDiscount(75000.0);
+        promo2.setStartDate(today.minusDays(30));
+        promo2.setEndDate(today.plusDays(10));
+        promo2.setIsActive(true);
+        promoCodeRepository.save(promo2);
+
+        PromoCode promo3 = new PromoCode();
+        promo3.setCampaignName("Promo Musim Panas");
+        promo3.setCode("SUMMER25");
+        promo3.setDiscountPercent(25.0);
+        promo3.setStartDate(today.plusDays(5));
+        promo3.setEndDate(today.plusDays(60));
+        promo3.setIsActive(true);
+        promoCodeRepository.save(promo3);
+
+        PromoCode promo4 = new PromoCode();
+        promo4.setCampaignName("Flash Sale");
+        promo4.setCode("FLASH99");
+        promo4.setDiscountPercent(50.0);
+        promo4.setMaxDiscount(100000.0);
+        promo4.setStartDate(today.minusDays(2));
+        promo4.setEndDate(today.plusDays(1));
+        promo4.setIsActive(true);
+        promoCodeRepository.save(promo4);
+
+        PromoCode promo5 = new PromoCode();
+        promo5.setCampaignName("Promo Ramadan");
+        promo5.setCode("RAMADAN45");
+        promo5.setDiscountPercent(45.0);
+        promo5.setStartDate(today.minusDays(60));
+        promo5.setEndDate(today.minusDays(20));
+        promo5.setIsActive(false);
+        promoCodeRepository.save(promo5);
+
+        PromoCode promo6 = new PromoCode();
+        promo6.setCampaignName("Diskon Member");
+        promo6.setCode("MEMBER20");
+        promo6.setDiscountPercent(20.0);
+        promo6.setStartDate(today.minusDays(15));
+        promo6.setEndDate(today.plusDays(45));
+        promo6.setIsActive(true);
+        promoCodeRepository.save(promo6);
+
+        PromoCode promo7 = new PromoCode();
+        promo7.setCampaignName("Promo Liga Champion");
+        promo7.setCode("CHAMPION777");
+        promo7.setDiscountPercent(30.0);
+        promo7.setMaxDiscount(150000.0);
+        promo7.setStartDate(today.minusDays(10));
+        promo7.setEndDate(today.plusDays(5));
+        promo7.setIsActive(true);
+        promoCodeRepository.save(promo7);
+
+        PromoCode promo8 = new PromoCode();
+        promo8.setCampaignName("Diskon Pertama");
+        promo8.setCode("HEMAT50K");
+        promo8.setDiscountPercent(50.0);
+        promo8.setStartDate(today.minusDays(100));
+        promo8.setEndDate(today.minusDays(90));
+        promo8.setIsActive(false);
+        promoCodeRepository.save(promo8);
+
+        PromoCode promo9 = new PromoCode();
+        promo9.setCampaignName("Promo Weekend");
+        promo9.setCode("WEEKEND15");
+        promo9.setDiscountPercent(15.0);
+        promo9.setStartDate(today.plusDays(7));
+        promo9.setEndDate(today.plusDays(9));
+        promo9.setIsActive(true);
+        promoCodeRepository.save(promo9);
+
+        PromoCode promo10 = new PromoCode();
+        promo10.setCampaignName("Big Sale");
+        promo10.setCode("BIGSALE100");
+        promo10.setDiscountPercent(10.0);
+        promo10.setStartDate(today.minusDays(1));
+        promo10.setEndDate(today.plusDays(14));
+        promo10.setIsActive(true);
+        promoCodeRepository.save(promo10);
+
+        System.out.println("=== Database Seeder: 10 PromoCodes berhasil diinsert ===");
     }
 }
