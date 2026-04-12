@@ -2,6 +2,7 @@ package myjerseyy.psbf_jersey.config;
 
 import myjerseyy.psbf_jersey.entity.Address;
 import myjerseyy.psbf_jersey.entity.Brand;
+import myjerseyy.psbf_jersey.entity.Faq;
 import myjerseyy.psbf_jersey.entity.Jersey;
 import myjerseyy.psbf_jersey.entity.League;
 import myjerseyy.psbf_jersey.entity.Order;
@@ -13,6 +14,7 @@ import myjerseyy.psbf_jersey.entity.Team;
 import myjerseyy.psbf_jersey.entity.User;
 import myjerseyy.psbf_jersey.repository.AddressRepository;
 import myjerseyy.psbf_jersey.repository.BrandRepository;
+import myjerseyy.psbf_jersey.repository.FaqRepository;
 import myjerseyy.psbf_jersey.repository.JerseyRepository;
 import myjerseyy.psbf_jersey.repository.LeagueRepository;
 import myjerseyy.psbf_jersey.repository.OrderRepository;
@@ -41,6 +43,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final PromoCodeRepository promoCodeRepository;
     private final ShipmentRepository shipmentRepository;
     private final AddressRepository addressRepository;
+    private final FaqRepository faqRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DatabaseSeeder(UserRepository userRepository, 
@@ -48,7 +51,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                          LeagueRepository leagueRepository, TeamRepository teamRepository,
                          BrandRepository brandRepository, PromoCodeRepository promoCodeRepository,
                          ShipmentRepository shipmentRepository, AddressRepository addressRepository,
-                         PasswordEncoder passwordEncoder) {
+                         FaqRepository faqRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jerseyRepository = jerseyRepository;
         this.orderRepository = orderRepository;
@@ -58,6 +61,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         this.promoCodeRepository = promoCodeRepository;
         this.shipmentRepository = shipmentRepository;
         this.addressRepository = addressRepository;
+        this.faqRepository = faqRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -67,6 +71,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         
         if (promoCodeRepository.count() == 0) {
             seedPromoCodes();
+        }
+        
+        if (faqRepository.count() == 0) {
+            seedFaqs();
         }
         
         if (userRepository.count() == 0) {
@@ -768,5 +776,89 @@ public class DatabaseSeeder implements CommandLineRunner {
         promoCodeRepository.save(promo10);
 
         System.out.println("=== Database Seeder: 10 PromoCodes berhasil diinsert ===");
+    }
+
+    private void seedFaqs() {
+        Faq faq1 = new Faq();
+        faq1.setQuestion("Apakah jersey yang dijual original 100%?");
+        faq1.setAnswer("Ya, semua jersey yang kami jual adalah produk original 100% dari brand resmi seperti Nike, Adidas, Puma, dan lainnya. Kami tidak menjual produk KW atau replika.");
+        faq1.setCategory("Produk");
+        faq1.setSortOrder(1);
+        faq1.setIsActive(true);
+        faqRepository.save(faq1);
+
+        Faq faq2 = new Faq();
+        faq2.setQuestion("Bisakah saya custom nama dan nomor di jersey?");
+        faq2.setAnswer("Mohon maaf, saat ini kami belum menyediakan layanan custom nama dan nomor jersey. Jersey yang kami jual adalah produk original dengan design resmi dari club/league.");
+        faq2.setCategory("Produk");
+        faq2.setSortOrder(2);
+        faq2.setIsActive(true);
+        faqRepository.save(faq2);
+
+        Faq faq3 = new Faq();
+        faq3.setQuestion("Berapa lama waktu pengiriman jersey?");
+        faq3.setAnswer("Waktu pengiriman bervariasi tergantung lokasi. Untuk Jawa biasanya 2-4 hari kerja, luar Jawa 4-7 hari kerja, dan daerah terpencil bisa lebih lama. Kami menggunakan JNE, SiCepat, J&T, Pos Indonesia, dan TIKI.");
+        faq3.setCategory("Pengiriman");
+        faq3.setSortOrder(3);
+        faq3.setIsActive(true);
+        faqRepository.save(faq3);
+
+        Faq faq4 = new Faq();
+        faq4.setQuestion("Bagaimana jika jersey yang diterima cacat/rusak?");
+        faq4.setAnswer("Jika jersey yang Anda terima dalam kondisi cacat atau rusak, silakan foto dan laporkan ke kami dalam waktu 1x24 jam setelah paket diterima. Kami akan mengganti dengan jersey baru tanpa biaya tambahan.");
+        faq4.setCategory("Pengiriman");
+        faq4.setSortOrder(4);
+        faq4.setIsActive(true);
+        faqRepository.save(faq4);
+
+        Faq faq5 = new Faq();
+        faq5.setQuestion("Metode pembayaran apa saja yang tersedia?");
+        faq5.setAnswer("Kami menerima pembayaran melalui Transfer Bank (BCA, Mandiri, BNI, BRI), E-Wallet (OVO, Dana, GoPay), dan Virtual Account. Pembayaran harus dilakukan dalam 1x24 jam setelah order.");
+        faq5.setCategory("Pembayaran");
+        faq5.setSortOrder(5);
+        faq5.setIsActive(true);
+        faqRepository.save(faq5);
+
+        Faq faq6 = new Faq();
+        faq6.setQuestion("Bagaimana cara menggunakan kode kupon/promo?");
+        faq6.setAnswer("Anda dapat memasukkan kode kupon pada kolom 'Kode Promo' saat checkout. Pastikan kupon masih aktif dan belum melewati masa berlaku. Setiap kupon memiliki ketentuan minimal belanja yang berbeda.");
+        faq6.setCategory("Pembayaran");
+        faq6.setSortOrder(6);
+        faq6.setIsActive(true);
+        faqRepository.save(faq6);
+
+        Faq faq7 = new Faq();
+        faq7.setQuestion("Apakah bisa return/refund jersey?");
+        faq7.setAnswer("Kami menerima return jika jersey yang diterima tidak sesuai pesanan (salah size, salah jersey, atau cacat). Pengajuan return harus dilakukan maksimal 1x24 jam setelah paket diterima dengan foto bukti.");
+        faq7.setCategory("Produk");
+        faq7.setSortOrder(7);
+        faq7.setIsActive(true);
+        faqRepository.save(faq7);
+
+        Faq faq8 = new Faq();
+        faq8.setQuestion("Bagaimana cara mengetahui ketersediaan stok jersey?");
+        faq8.setAnswer("Stok jersey kami diperbarui secara real-time di website. Jika jersey yang Anda inginkan habis, Anda bisa menghubungi kami via WhatsApp untuk informasi restock. Biasanya restock dilakukan dalam 1-2 minggu.");
+        faq8.setCategory("Produk");
+        faq8.setSortOrder(8);
+        faq8.setIsActive(true);
+        faqRepository.save(faq8);
+
+        Faq faq9 = new Faq();
+        faq9.setQuestion("Apakah ada biaya tambahan untuk pengiriman?");
+        faq9.setAnswer("Ya, biaya pengiriman dihitung berdasarkan berat paket, dimensi, dan tujuan pengiriman. Biaya pengiriman sudah termasuk dalam total pembayaran saat checkout. Gratis ongkir mungkin tersedia dengan promo tertentu.");
+        faq9.setCategory("Pengiriman");
+        faq9.setSortOrder(9);
+        faq9.setIsActive(true);
+        faqRepository.save(faq9);
+
+        Faq faq10 = new Faq();
+        faq10.setQuestion("Bagaimana cara menghubungi customer service?");
+        faq10.setAnswer("Anda dapat menghubungi customer service kami melalui WhatsApp di nomor yang tertera di website, email, atau melalui kolom komentar di media sosial kami. Jam operasional CS adalah Senin-Jumat pukul 09.00-17.00 WIB.");
+        faq10.setCategory("Layanan");
+        faq10.setSortOrder(10);
+        faq10.setIsActive(true);
+        faqRepository.save(faq10);
+
+        System.out.println("=== Database Seeder: 10 FAQs berhasil diinsert ===");
     }
 }
