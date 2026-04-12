@@ -8,6 +8,8 @@ import myjerseyy.psbf_jersey.entity.League;
 import myjerseyy.psbf_jersey.entity.Order;
 import myjerseyy.psbf_jersey.entity.OrderItem;
 import myjerseyy.psbf_jersey.entity.OrderStatus;
+import myjerseyy.psbf_jersey.entity.Payment;
+import myjerseyy.psbf_jersey.entity.PaymentStatus;
 import myjerseyy.psbf_jersey.entity.PromoCode;
 import myjerseyy.psbf_jersey.entity.Shipment;
 import myjerseyy.psbf_jersey.entity.Team;
@@ -18,6 +20,7 @@ import myjerseyy.psbf_jersey.repository.FaqRepository;
 import myjerseyy.psbf_jersey.repository.JerseyRepository;
 import myjerseyy.psbf_jersey.repository.LeagueRepository;
 import myjerseyy.psbf_jersey.repository.OrderRepository;
+import myjerseyy.psbf_jersey.repository.PaymentRepository;
 import myjerseyy.psbf_jersey.repository.PromoCodeRepository;
 import myjerseyy.psbf_jersey.repository.ShipmentRepository;
 import myjerseyy.psbf_jersey.repository.TeamRepository;
@@ -44,6 +47,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final ShipmentRepository shipmentRepository;
     private final AddressRepository addressRepository;
     private final FaqRepository faqRepository;
+    private final PaymentRepository paymentRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DatabaseSeeder(UserRepository userRepository, 
@@ -51,7 +55,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                          LeagueRepository leagueRepository, TeamRepository teamRepository,
                          BrandRepository brandRepository, PromoCodeRepository promoCodeRepository,
                          ShipmentRepository shipmentRepository, AddressRepository addressRepository,
-                         FaqRepository faqRepository, PasswordEncoder passwordEncoder) {
+                         FaqRepository faqRepository, PaymentRepository paymentRepository,
+                         PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jerseyRepository = jerseyRepository;
         this.orderRepository = orderRepository;
@@ -62,6 +67,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         this.shipmentRepository = shipmentRepository;
         this.addressRepository = addressRepository;
         this.faqRepository = faqRepository;
+        this.paymentRepository = paymentRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -84,8 +90,13 @@ public class DatabaseSeeder implements CommandLineRunner {
             seedTeams();
             seedJerseys();
             seedOrders();
+            seedPayments();
         } else if (orderRepository.count() == 0) {
             seedOrders();
+        }
+        
+        if (paymentRepository.count() == 0 && orderRepository.count() > 0) {
+            seedPayments();
         }
     }
 
@@ -860,5 +871,61 @@ public class DatabaseSeeder implements CommandLineRunner {
         faqRepository.save(faq10);
 
         System.out.println("=== Database Seeder: 10 FAQs berhasil diinsert ===");
+    }
+
+    private void seedPayments() {
+        List<Order> orders = orderRepository.findAll();
+        
+        String[] methods = {"BCA Virtual Account", "Mandiri Virtual Account", "BNI Virtual Account", "BRI Virtual Account", "OVO", "DANA", "GoPay", "QRIS"};
+        String dummyBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+
+        Object[][] paymentConfigs = {
+            {0, PaymentStatus.SUCCESS, 2},
+            {1, PaymentStatus.PENDING, 1},
+            {2, PaymentStatus.SUCCESS, 3},
+            {3, PaymentStatus.PENDING, 0},
+            {4, PaymentStatus.SUCCESS, 1},
+            {5, PaymentStatus.PENDING, 2},
+            {6, PaymentStatus.SUCCESS, 0},
+            {7, PaymentStatus.PENDING, 3},
+            {8, PaymentStatus.SUCCESS, 1},
+            {9, PaymentStatus.PENDING, 2},
+            {10, PaymentStatus.FAILED, 0},
+            {11, PaymentStatus.PENDING, 1},
+            {12, PaymentStatus.SUCCESS, 2},
+            {13, PaymentStatus.PENDING, 3},
+            {14, PaymentStatus.SUCCESS, 0},
+        };
+
+        int count = 0;
+        for (Object[] config : paymentConfigs) {
+            int orderIdx = (Integer) config[0];
+            PaymentStatus status = (PaymentStatus) config[1];
+            int methodIdx = (Integer) config[2];
+
+            if (orderIdx < orders.size()) {
+                Order order = orders.get(orderIdx);
+                
+                if (paymentRepository.findByOrderId(order.getId()).isEmpty()) {
+                    Payment payment = new Payment();
+                    payment.setOrder(order);
+                    payment.setPaymentMethod(methods[methodIdx % methods.length]);
+                    payment.setAmount(order.getFinalPrice() != null ? order.getFinalPrice() : order.getTotalPrice());
+                    payment.setPaymentDate(order.getOrderDate().plusHours(1));
+                    payment.setProofImage(dummyBase64);
+                    payment.setPaymentStatus(status);
+
+                    if (status == PaymentStatus.SUCCESS) {
+                        order.setStatus(OrderStatus.CONFIRMED);
+                        orderRepository.save(order);
+                    }
+
+                    paymentRepository.save(payment);
+                    count++;
+                }
+            }
+        }
+
+        System.out.println("=== Database Seeder: " + count + " Payments berhasil diinsert ===");
     }
 }
