@@ -580,7 +580,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 shipment.setShippingCost(15000.0 + (int)(Math.random() * 35000));
                 
                 User customer = order.getCustomer();
-                var addresses = addressRepository.findByUserId(customer.getId());
+                var addresses = addressRepository.findByUser_Id(customer.getId());
                 if (!addresses.isEmpty()) {
                     shipment.setAddress(addresses.get(0));
                 }
@@ -589,16 +589,16 @@ public class DatabaseSeeder implements CommandLineRunner {
                     shipment.setStatus(OrderStatus.PROCESSING);
                     shipment.setCourierName(null);
                     shipment.setTrackingNumber(null);
-                } else {
+                } else if (status == OrderStatus.SHIPPED) {
+                    shipment.setStatus(OrderStatus.SHIPPED);
                     shipment.setCourierName(couriers[(int)(Math.random() * couriers.length)]);
                     String tracking = "TRK" + System.currentTimeMillis() + String.format("%02d", i);
                     shipment.setTrackingNumber(tracking);
-                    
-                    if (status == OrderStatus.SHIPPED) {
-                        shipment.setStatus(OrderStatus.SHIPPED);
-                    } else if (status == OrderStatus.COMPLETED) {
-                        shipment.setStatus(OrderStatus.COMPLETED);
-                    }
+                } else if (status == OrderStatus.COMPLETED) {
+                    shipment.setStatus(OrderStatus.COMPLETED);
+                    shipment.setCourierName(couriers[(int)(Math.random() * couriers.length)]);
+                    String tracking = "TRK" + System.currentTimeMillis() + String.format("%02d", i);
+                    shipment.setTrackingNumber(tracking);
                 }
                 
                 shipmentRepository.save(shipment);

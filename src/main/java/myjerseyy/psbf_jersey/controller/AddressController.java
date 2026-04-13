@@ -41,7 +41,7 @@ public class AddressController {
         }
         
         User user = userOpt.get();
-        List<Address> addresses = addressRepository.findByUserId(userId);
+        List<Address> addresses = addressRepository.findByUser_Id(userId);
         
         model.addAttribute("user", user);
         model.addAttribute("addresses", addresses);
@@ -84,7 +84,7 @@ public class AddressController {
         }
         
         if (isDefault != null && isDefault) {
-            List<Address> existingAddresses = addressRepository.findByUserId(userId);
+            List<Address> existingAddresses = addressRepository.findByUser_Id(userId);
             for (Address existingAddr : existingAddresses) {
                 if (!existingAddr.getId().equals(id)) {
                     existingAddr.setIsDefault(false);

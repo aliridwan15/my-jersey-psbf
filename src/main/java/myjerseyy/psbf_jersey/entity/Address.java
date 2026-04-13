@@ -94,4 +94,8 @@ public class Address {
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
     }
+    
+    public Long getUserId() {
+        return user != null ? user.getId() : null;
+    }
 }

@@ -4,10 +4,13 @@ import jakarta.servlet.http.HttpSession;
 import myjerseyy.psbf_jersey.entity.Address;
 import myjerseyy.psbf_jersey.entity.Order;
 import myjerseyy.psbf_jersey.entity.OrderStatus;
+import myjerseyy.psbf_jersey.entity.Payment;
+import myjerseyy.psbf_jersey.entity.PaymentStatus;
 import myjerseyy.psbf_jersey.entity.Shipment;
 import myjerseyy.psbf_jersey.entity.User;
 import myjerseyy.psbf_jersey.repository.AddressRepository;
 import myjerseyy.psbf_jersey.repository.OrderRepository;
+import myjerseyy.psbf_jersey.repository.PaymentRepository;
 import myjerseyy.psbf_jersey.repository.ShipmentRepository;
 import myjerseyy.psbf_jersey.repository.UserRepository;
 import org.hibernate.Hibernate;
@@ -20,7 +23,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin/shipments")
@@ -37,6 +42,9 @@ public class ShipmentController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
 
     private static final List<OrderStatus> SHIPMENT_STATUSES = Arrays.asList(
             OrderStatus.PENDING,
@@ -67,6 +75,15 @@ public class ShipmentController {
 
         List<Order> ordersToShow;
         List<Order> allOrders = orderRepository.findAllWithPromoCode(org.springframework.data.domain.Pageable.unpaged()).getContent();
+        
+        // Filter orders with SUCCESS payment
+        allOrders = allOrders.stream()
+                .filter(o -> {
+                    Hibernate.initialize(o.getPayment());
+                    Payment payment = o.getPayment();
+                    return payment != null && payment.getPaymentStatus() == PaymentStatus.SUCCESS;
+                })
+                .toList();
         
         String filterStatus;
         if (status != null && !status.isEmpty()) {
@@ -102,9 +119,11 @@ public class ShipmentController {
         }
 
         List<Address> addresses = addressRepository.findAll();
+        Map<Long, List<Address>> addressesByUser = addresses.stream()
+                .collect(Collectors.groupingBy(Address::getUserId));
 
         model.addAttribute("orders", ordersToShow);
-        model.addAttribute("addresses", addresses);
+        model.addAttribute("addressesByUser", addressesByUser);
         model.addAttribute("selectedStatus", filterStatus);
 
         return "kelola-pengiriman";
@@ -139,6 +158,8 @@ public class ShipmentController {
 
         if (addressId != null && addressId > 0) {
             addressRepository.findById(addressId).ifPresent(shipment::setAddress);
+        } else if (existingShipment.isPresent() && existingShipment.get().getAddress() != null) {
+            shipment.setAddress(existingShipment.get().getAddress());
         }
 
         shipment.setCourierName(courierName);
@@ -171,11 +192,14 @@ public class ShipmentController {
         Order order = orderOpt.get();
         
         if (status == OrderStatus.PROCESSING && order.getStatus() == OrderStatus.CONFIRMED) {
-            Shipment shipment = new Shipment();
-            shipment.setOrder(order);
-            shipment.setStatus(OrderStatus.PROCESSING);
-            shipment.setShippingCost(25000.0);
-            shipmentRepository.save(shipment);
+            Optional<Shipment> existingShipmentCheck = shipmentRepository.findByOrderId(orderId);
+            if (existingShipmentCheck.isEmpty()) {
+                Shipment shipment = new Shipment();
+                shipment.setOrder(order);
+                shipment.setStatus(OrderStatus.PROCESSING);
+                shipment.setShippingCost(25000.0);
+                shipmentRepository.save(shipment);
+            }
         }
         
         Optional<Shipment> existingShipment = shipmentRepository.findByOrderId(orderId);
@@ -236,6 +260,125 @@ public class ShipmentController {
         orderRepository.save(order);
 
         redirectAttributes.addFlashAttribute("successMessage", "Pengiriman berhasil dibuat! Silakan input resi.");
+        return "redirect:/admin/shipments";
+    }
+    
+    @PostMapping("/process")
+    public String processShipment(
+            @RequestParam Long orderId,
+            RedirectAttributes redirectAttributes) {
+        
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+        if (orderOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Order tidak ditemukan!");
+            return "redirect:/admin/shipments";
+        }
+        
+        Order order = orderOpt.get();
+        if (order.getStatus() != OrderStatus.CONFIRMED) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Order tidak bisa diproses!");
+            return "redirect:/admin/shipments";
+        }
+        
+        order.setStatus(OrderStatus.PROCESSING);
+        
+        Optional<Shipment> existingShipment = shipmentRepository.findByOrderId(orderId);
+        if (existingShipment.isEmpty()) {
+            Shipment shipment = new Shipment();
+            shipment.setOrder(order);
+            shipment.setStatus(OrderStatus.PROCESSING);
+            shipment.setShippingCost(25000.0);
+            shipmentRepository.save(shipment);
+        }
+        
+        orderRepository.save(order);
+        redirectAttributes.addFlashAttribute("successMessage", "Order berhasil diproses! Silakan input resi.");
+        return "redirect:/admin/shipments";
+    }
+    
+    @PostMapping("/complete/{id}")
+    public String completeShipment(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
+        
+        Optional<Order> orderOpt = orderRepository.findById(id);
+        if (orderOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Order tidak ditemukan!");
+            return "redirect:/admin/shipments";
+        }
+        
+        Order order = orderOpt.get();
+        if (order.getStatus() != OrderStatus.SHIPPED) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Order tidak bisa diselesaikan!");
+            return "redirect:/admin/shipments";
+        }
+        
+        order.setStatus(OrderStatus.COMPLETED);
+        
+        Optional<Shipment> shipmentOpt = shipmentRepository.findByOrderId(id);
+        if (shipmentOpt.isPresent()) {
+            Shipment shipment = shipmentOpt.get();
+            shipment.setStatus(OrderStatus.COMPLETED);
+            shipmentRepository.save(shipment);
+        }
+        
+        orderRepository.save(order);
+        redirectAttributes.addFlashAttribute("successMessage", "Order berhasil diselesaikan!");
+        return "redirect:/admin/shipments";
+    }
+    
+    @PostMapping("/return/{id}")
+    public String returnShipment(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
+        
+        Optional<Order> orderOpt = orderRepository.findById(id);
+        if (orderOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Order tidak ditemukan!");
+            return "redirect:/admin/shipments";
+        }
+        
+        Order order = orderOpt.get();
+        if (order.getStatus() != OrderStatus.SHIPPED && order.getStatus() != OrderStatus.COMPLETED) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Order tidak bisa dikembalikan!");
+            return "redirect:/admin/shipments";
+        }
+        
+        order.setStatus(OrderStatus.RETURNED);
+        
+        Optional<Shipment> shipmentOpt = shipmentRepository.findByOrderId(id);
+        if (shipmentOpt.isPresent()) {
+            Shipment shipment = shipmentOpt.get();
+            shipment.setStatus(OrderStatus.RETURNED);
+            shipmentRepository.save(shipment);
+        }
+        
+        orderRepository.save(order);
+        redirectAttributes.addFlashAttribute("successMessage", "Order berhasil dikembalikan!");
+        return "redirect:/admin/shipments";
+    }
+    
+    @PostMapping("/cancel/{id}")
+    public String cancelShipment(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
+        
+        Optional<Order> orderOpt = orderRepository.findById(id);
+        if (orderOpt.isEmpty()) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Order tidak ditemukan!");
+            return "redirect:/admin/shipments";
+        }
+        
+        Order order = orderOpt.get();
+        if (order.getStatus() != OrderStatus.CONFIRMED && order.getStatus() != OrderStatus.PENDING) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Order tidak bisa dibatalkan!");
+            return "redirect:/admin/shipments";
+        }
+        
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
+        
+        redirectAttributes.addFlashAttribute("successMessage", "Order berhasil dibatalkan!");
         return "redirect:/admin/shipments";
     }
 }
