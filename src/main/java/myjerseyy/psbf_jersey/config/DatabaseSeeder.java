@@ -3,6 +3,7 @@ package myjerseyy.psbf_jersey.config;
 import myjerseyy.psbf_jersey.entity.Address;
 import myjerseyy.psbf_jersey.entity.Brand;
 import myjerseyy.psbf_jersey.entity.Cart;
+import myjerseyy.psbf_jersey.entity.Courier;
 import myjerseyy.psbf_jersey.entity.Faq;
 import myjerseyy.psbf_jersey.entity.Jersey;
 import myjerseyy.psbf_jersey.entity.League;
@@ -21,6 +22,7 @@ import myjerseyy.psbf_jersey.entity.Wishlist;
 import myjerseyy.psbf_jersey.repository.AddressRepository;
 import myjerseyy.psbf_jersey.repository.BrandRepository;
 import myjerseyy.psbf_jersey.repository.CartRepository;
+import myjerseyy.psbf_jersey.repository.CourierRepository;
 import myjerseyy.psbf_jersey.repository.FaqRepository;
 import myjerseyy.psbf_jersey.repository.JerseyRepository;
 import myjerseyy.psbf_jersey.repository.LeagueRepository;
@@ -61,6 +63,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final CartRepository cartRepository;
     private final WishlistRepository wishlistRepository;
     private final PaymentMethodRepository paymentMethodRepository;
+    private final CourierRepository courierRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DatabaseSeeder(UserRepository userRepository, 
@@ -71,6 +74,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                          FaqRepository faqRepository, PaymentRepository paymentRepository,
                          ReviewRepository reviewRepository, CartRepository cartRepository,
                          WishlistRepository wishlistRepository, PaymentMethodRepository paymentMethodRepository,
+                         CourierRepository courierRepository,
                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jerseyRepository = jerseyRepository;
@@ -87,6 +91,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         this.cartRepository = cartRepository;
         this.wishlistRepository = wishlistRepository;
         this.paymentMethodRepository = paymentMethodRepository;
+        this.courierRepository = courierRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -132,6 +137,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         
         if (paymentMethodRepository.count() == 0) {
             seedPaymentMethods();
+        }
+        
+        if (courierRepository.count() == 0) {
+            seedCouriers();
         }
     }
 
@@ -1159,5 +1168,30 @@ public class DatabaseSeeder implements CommandLineRunner {
         paymentMethodRepository.save(qris);
         
         System.out.println("=== Database Seeder: 3 Payment Methods berhasil diinsert ===");
+    }
+    
+    private void seedCouriers() {
+        Courier jnt = new Courier();
+        jnt.setName("J&T Express");
+        jnt.setCode("jnt");
+        jnt.setLogoImage("https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/JT_Express_logo.svg/512px-JT_Express_logo.svg.png");
+        jnt.setIsActive(true);
+        courierRepository.save(jnt);
+        
+        Courier jne = new Courier();
+        jne.setName("JNE");
+        jne.setCode("jne");
+        jne.setLogoImage("https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/JNE_Logo.svg/512px-JNE_Logo.svg.png");
+        jne.setIsActive(true);
+        courierRepository.save(jne);
+        
+        Courier sicepat = new Courier();
+        sicepat.setName("SiCepat");
+        sicepat.setCode("sicepat");
+        sicepat.setLogoImage("https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/SiCepat_Logo.svg/512px-SiCepat_Logo.svg.png");
+        sicepat.setIsActive(true);
+        courierRepository.save(sicepat);
+        
+        System.out.println("=== Database Seeder: 3 Couriers berhasil diinsert ===");
     }
 }

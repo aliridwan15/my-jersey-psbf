@@ -2,6 +2,7 @@ package myjerseyy.psbf_jersey.controller;
 
 import jakarta.servlet.http.HttpSession;
 import myjerseyy.psbf_jersey.entity.Address;
+import myjerseyy.psbf_jersey.entity.Courier;
 import myjerseyy.psbf_jersey.entity.Order;
 import myjerseyy.psbf_jersey.entity.OrderStatus;
 import myjerseyy.psbf_jersey.entity.Payment;
@@ -9,6 +10,7 @@ import myjerseyy.psbf_jersey.entity.PaymentStatus;
 import myjerseyy.psbf_jersey.entity.Shipment;
 import myjerseyy.psbf_jersey.entity.User;
 import myjerseyy.psbf_jersey.repository.AddressRepository;
+import myjerseyy.psbf_jersey.repository.CourierRepository;
 import myjerseyy.psbf_jersey.repository.OrderRepository;
 import myjerseyy.psbf_jersey.repository.PaymentRepository;
 import myjerseyy.psbf_jersey.repository.ShipmentRepository;
@@ -46,6 +48,9 @@ public class ShipmentController {
     @Autowired
     private PaymentRepository paymentRepository;
 
+    @Autowired
+    private CourierRepository courierRepository;
+
     private static final List<OrderStatus> SHIPMENT_STATUSES = Arrays.asList(
             OrderStatus.PENDING,
             OrderStatus.CONFIRMED,
@@ -66,6 +71,7 @@ public class ShipmentController {
         model.addAttribute("activePage", "shipment");
         model.addAttribute("pageTitle", "Kelola Pengiriman");
         model.addAttribute("statuses", SHIPMENT_STATUSES);
+        model.addAttribute("couriers", courierRepository.findByIsActiveTrue());
 
         Long userId = (Long) session.getAttribute("userId");
         if (userId != null) {
