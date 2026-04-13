@@ -16,6 +16,7 @@ import myjerseyy.psbf_jersey.entity.Review;
 import myjerseyy.psbf_jersey.entity.Shipment;
 import myjerseyy.psbf_jersey.entity.Team;
 import myjerseyy.psbf_jersey.entity.User;
+import myjerseyy.psbf_jersey.entity.Wishlist;
 import myjerseyy.psbf_jersey.repository.AddressRepository;
 import myjerseyy.psbf_jersey.repository.BrandRepository;
 import myjerseyy.psbf_jersey.repository.CartRepository;
@@ -29,6 +30,7 @@ import myjerseyy.psbf_jersey.repository.ReviewRepository;
 import myjerseyy.psbf_jersey.repository.ShipmentRepository;
 import myjerseyy.psbf_jersey.repository.TeamRepository;
 import myjerseyy.psbf_jersey.repository.UserRepository;
+import myjerseyy.psbf_jersey.repository.WishlistRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -55,6 +57,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final PaymentRepository paymentRepository;
     private final ReviewRepository reviewRepository;
     private final CartRepository cartRepository;
+    private final WishlistRepository wishlistRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DatabaseSeeder(UserRepository userRepository, 
@@ -64,6 +67,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                          ShipmentRepository shipmentRepository, AddressRepository addressRepository,
                          FaqRepository faqRepository, PaymentRepository paymentRepository,
                          ReviewRepository reviewRepository, CartRepository cartRepository,
+                         WishlistRepository wishlistRepository,
                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jerseyRepository = jerseyRepository;
@@ -78,6 +82,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         this.paymentRepository = paymentRepository;
         this.reviewRepository = reviewRepository;
         this.cartRepository = cartRepository;
+        this.wishlistRepository = wishlistRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -115,6 +120,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         
         if (cartRepository.count() == 0 && jerseyRepository.count() > 0 && userRepository.count() > 0) {
             seedCarts();
+        }
+        
+        if (wishlistRepository.count() == 0 && jerseyRepository.count() > 0 && userRepository.count() > 0) {
+            seedWishlists();
         }
     }
 
@@ -1069,5 +1078,50 @@ public class DatabaseSeeder implements CommandLineRunner {
         }
         
         System.out.println("=== Database Seeder: " + cartCount + " Carts berhasil diinsert ===");
+    }
+    
+    private void seedWishlists() {
+        List<User> customers = userRepository.findAll().stream()
+                .filter(u -> "CUSTOMER".equals(u.getRole()))
+                .toList();
+        
+        List<Jersey> jerseys = jerseyRepository.findAll();
+        
+        if (customers.isEmpty() || jerseys.size() < 3) {
+            return;
+        }
+        
+        int[][] wishlistConfigs = {
+            {0, 2},
+            {0, 5},
+            {1, 0},
+            {1, 7},
+            {2, 3},
+            {3, 1},
+            {4, 8},
+            {5, 4},
+            {6, 6},
+            {7, 10},
+        };
+        
+        int wishlistCount = 0;
+        LocalDateTime baseDate = LocalDateTime.now().minusDays(15);
+        
+        for (int[] config : wishlistConfigs) {
+            int customerIdx = config[0];
+            int jerseyIdx = config[1];
+            
+            if (customerIdx < customers.size() && jerseyIdx < jerseys.size()) {
+                Wishlist wishlist = new Wishlist();
+                wishlist.setUser(customers.get(customerIdx));
+                wishlist.setJersey(jerseys.get(jerseyIdx));
+                wishlist.setAddedDate(baseDate.plusHours(wishlistCount * 5));
+                
+                wishlistRepository.save(wishlist);
+                wishlistCount++;
+            }
+        }
+        
+        System.out.println("=== Database Seeder: " + wishlistCount + " Wishlists berhasil diinsert ===");
     }
 }

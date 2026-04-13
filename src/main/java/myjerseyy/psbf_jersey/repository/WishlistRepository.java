@@ -1,0 +1,14 @@
+package myjerseyy.psbf_jersey.repository;
+
+import myjerseyy.psbf_jersey.entity.Wishlist;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface WishlistRepository extends JpaRepository<Wishlist, Long> {
+    List<Wishlist> findByUserId(Long userId);
+    Page<Wishlist> findAll(Pageable pageable);
+}
