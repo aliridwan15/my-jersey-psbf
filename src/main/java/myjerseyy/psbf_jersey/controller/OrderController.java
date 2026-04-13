@@ -1,9 +1,11 @@
 package myjerseyy.psbf_jersey.controller;
 
+import myjerseyy.psbf_jersey.entity.Address;
 import myjerseyy.psbf_jersey.entity.Order;
 import myjerseyy.psbf_jersey.entity.OrderStatus;
 import myjerseyy.psbf_jersey.entity.Shipment;
 import myjerseyy.psbf_jersey.entity.User;
+import myjerseyy.psbf_jersey.repository.AddressRepository;
 import myjerseyy.psbf_jersey.repository.OrderRepository;
 import myjerseyy.psbf_jersey.repository.ShipmentRepository;
 import myjerseyy.psbf_jersey.repository.UserRepository;
@@ -36,6 +38,9 @@ public class OrderController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private AddressRepository addressRepository;
 
     @GetMapping
     public String ordersPage(
@@ -139,6 +144,15 @@ public class OrderController {
         Shipment shipment = new Shipment();
         shipment.setOrder(order);
         shipment.setStatus(OrderStatus.PROCESSING);
+        
+        Address defaultAddress = addressRepository.findByUser_Id(order.getCustomer().getId()).stream()
+                .filter(a -> Boolean.TRUE.equals(a.getIsDefault()))
+                .findFirst()
+                .orElseGet(() -> addressRepository.findByUser_Id(order.getCustomer().getId()).stream().findFirst().orElse(null));
+        
+        if (defaultAddress != null) {
+            shipment.setAddress(defaultAddress);
+        }
         
         shipmentRepository.save(shipment);
         orderRepository.save(order);

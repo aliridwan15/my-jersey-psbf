@@ -2,6 +2,7 @@ package myjerseyy.psbf_jersey.config;
 
 import myjerseyy.psbf_jersey.entity.Address;
 import myjerseyy.psbf_jersey.entity.Brand;
+import myjerseyy.psbf_jersey.entity.Cart;
 import myjerseyy.psbf_jersey.entity.Faq;
 import myjerseyy.psbf_jersey.entity.Jersey;
 import myjerseyy.psbf_jersey.entity.League;
@@ -17,6 +18,7 @@ import myjerseyy.psbf_jersey.entity.Team;
 import myjerseyy.psbf_jersey.entity.User;
 import myjerseyy.psbf_jersey.repository.AddressRepository;
 import myjerseyy.psbf_jersey.repository.BrandRepository;
+import myjerseyy.psbf_jersey.repository.CartRepository;
 import myjerseyy.psbf_jersey.repository.FaqRepository;
 import myjerseyy.psbf_jersey.repository.JerseyRepository;
 import myjerseyy.psbf_jersey.repository.LeagueRepository;
@@ -52,6 +54,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final FaqRepository faqRepository;
     private final PaymentRepository paymentRepository;
     private final ReviewRepository reviewRepository;
+    private final CartRepository cartRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DatabaseSeeder(UserRepository userRepository, 
@@ -60,7 +63,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                          BrandRepository brandRepository, PromoCodeRepository promoCodeRepository,
                          ShipmentRepository shipmentRepository, AddressRepository addressRepository,
                          FaqRepository faqRepository, PaymentRepository paymentRepository,
-                         ReviewRepository reviewRepository,
+                         ReviewRepository reviewRepository, CartRepository cartRepository,
                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jerseyRepository = jerseyRepository;
@@ -74,6 +77,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         this.faqRepository = faqRepository;
         this.paymentRepository = paymentRepository;
         this.reviewRepository = reviewRepository;
+        this.cartRepository = cartRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -107,6 +111,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         
         if (reviewRepository.count() == 0 && jerseyRepository.count() > 0 && userRepository.count() > 0) {
             seedReviews();
+        }
+        
+        if (cartRepository.count() == 0 && jerseyRepository.count() > 0 && userRepository.count() > 0) {
+            seedCarts();
         }
     }
 
@@ -577,28 +585,34 @@ public class DatabaseSeeder implements CommandLineRunner {
             if (status == OrderStatus.PROCESSING || status == OrderStatus.SHIPPED || status == OrderStatus.COMPLETED) {
                 Shipment shipment = new Shipment();
                 shipment.setOrder(order);
-                shipment.setShippingCost(15000.0 + (int)(Math.random() * 35000));
                 
                 User customer = order.getCustomer();
-                var addresses = addressRepository.findByUser_Id(customer.getId());
-                if (!addresses.isEmpty()) {
-                    shipment.setAddress(addresses.get(0));
+                List<Address> customerAddresses = addressRepository.findByUser_Id(customer.getId());
+                if (!customerAddresses.isEmpty()) {
+                    Address addr = customerAddresses.stream()
+                            .filter(a -> Boolean.TRUE.equals(a.getIsDefault()))
+                            .findFirst()
+                            .orElse(customerAddresses.get(0));
+                    shipment.setAddress(addr);
                 }
                 
                 if (status == OrderStatus.PROCESSING) {
                     shipment.setStatus(OrderStatus.PROCESSING);
                     shipment.setCourierName(null);
                     shipment.setTrackingNumber(null);
+                    shipment.setShippingCost(0.0);
                 } else if (status == OrderStatus.SHIPPED) {
                     shipment.setStatus(OrderStatus.SHIPPED);
                     shipment.setCourierName(couriers[(int)(Math.random() * couriers.length)]);
                     String tracking = "TRK" + System.currentTimeMillis() + String.format("%02d", i);
                     shipment.setTrackingNumber(tracking);
+                    shipment.setShippingCost(15000.0 + (int)(Math.random() * 35000));
                 } else if (status == OrderStatus.COMPLETED) {
                     shipment.setStatus(OrderStatus.COMPLETED);
                     shipment.setCourierName(couriers[(int)(Math.random() * couriers.length)]);
                     String tracking = "TRK" + System.currentTimeMillis() + String.format("%02d", i);
                     shipment.setTrackingNumber(tracking);
+                    shipment.setShippingCost(15000.0 + (int)(Math.random() * 35000));
                 }
                 
                 shipmentRepository.save(shipment);
@@ -678,14 +692,33 @@ public class DatabaseSeeder implements CommandLineRunner {
                 Shipment shipment = new Shipment();
                 shipment.setOrder(order);
                 shipment.setStatus(order.getStatus());
-                shipment.setShippingCost(25000.0);
+                
+                User customer = order.getCustomer();
+                List<Address> customerAddresses = addressRepository.findByUser_Id(customer.getId());
+                if (!customerAddresses.isEmpty()) {
+                    Address addr = customerAddresses.stream()
+                            .filter(a -> Boolean.TRUE.equals(a.getIsDefault()))
+                            .findFirst()
+                            .orElse(customerAddresses.get(0));
+                    shipment.setAddress(addr);
+                }
                 
                 if (order.getStatus() == OrderStatus.PROCESSING) {
                     shipment.setCourierName(null);
                     shipment.setTrackingNumber(null);
-                } else {
+                    shipment.setShippingCost(0.0);
+                } else if (order.getStatus() == OrderStatus.SHIPPED) {
                     shipment.setCourierName("JNE Express");
                     shipment.setTrackingNumber("TRK" + System.currentTimeMillis() + order.getId());
+                    shipment.setShippingCost(25000.0);
+                } else if (order.getStatus() == OrderStatus.COMPLETED) {
+                    shipment.setCourierName("JNE Express");
+                    shipment.setTrackingNumber("TRK" + System.currentTimeMillis() + order.getId());
+                    shipment.setShippingCost(25000.0);
+                } else if (order.getStatus() == OrderStatus.RETURNED) {
+                    shipment.setCourierName("-");
+                    shipment.setTrackingNumber("-");
+                    shipment.setShippingCost(25000.0);
                 }
                 
                 shipmentRepository.save(shipment);
@@ -980,5 +1013,61 @@ public class DatabaseSeeder implements CommandLineRunner {
         }
 
         System.out.println("=== Database Seeder: " + reviewCount + " Review berhasil diinsert ===");
+    }
+    
+    private void seedCarts() {
+        List<User> customers = userRepository.findAll().stream()
+                .filter(u -> "CUSTOMER".equals(u.getRole()))
+                .toList();
+        
+        List<Jersey> jerseys = jerseyRepository.findAll();
+        
+        if (customers.isEmpty() || jerseys.size() < 3) {
+            return;
+        }
+        
+        String[] sizes = {"S", "M", "L", "XL"};
+        
+        Object[][] cartConfigs = {
+            {0, 0, "M", 2},
+            {0, 3, "L", 1},
+            {1, 1, "XL", 1},
+            {1, 5, "M", 2},
+            {2, 2, "S", 1},
+            {3, 4, "L", 3},
+            {4, 6, "M", 1},
+            {5, 7, "XL", 2},
+            {6, 8, "L", 1},
+            {7, 9, "S", 2},
+            {8, 10, "M", 1},
+            {9, 11, "L", 2},
+            {10, 12, "XL", 1},
+            {11, 13, "M", 3},
+            {12, 14, "S", 1},
+        };
+        
+        int cartCount = 0;
+        LocalDateTime baseDate = LocalDateTime.now().minusDays(30);
+        
+        for (Object[] config : cartConfigs) {
+            int customerIdx = (Integer) config[0];
+            int jerseyIdx = (Integer) config[1];
+            String size = (String) config[2];
+            int quantity = (Integer) config[3];
+            
+            if (customerIdx < customers.size() && jerseyIdx < jerseys.size()) {
+                Cart cart = new Cart();
+                cart.setUser(customers.get(customerIdx));
+                cart.setJersey(jerseys.get(jerseyIdx));
+                cart.setSize(size);
+                cart.setQuantity(quantity);
+                cart.setCreatedAt(baseDate.plusHours(cartCount * 3));
+                
+                cartRepository.save(cart);
+                cartCount++;
+            }
+        }
+        
+        System.out.println("=== Database Seeder: " + cartCount + " Carts berhasil diinsert ===");
     }
 }

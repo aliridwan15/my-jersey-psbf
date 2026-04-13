@@ -198,6 +198,16 @@ public class ShipmentController {
                 shipment.setOrder(order);
                 shipment.setStatus(OrderStatus.PROCESSING);
                 shipment.setShippingCost(25000.0);
+                
+                Address defaultAddress = addressRepository.findByUser_Id(order.getCustomer().getId()).stream()
+                        .filter(a -> Boolean.TRUE.equals(a.getIsDefault()))
+                        .findFirst()
+                        .orElseGet(() -> addressRepository.findByUser_Id(order.getCustomer().getId()).stream().findFirst().orElse(null));
+                
+                if (defaultAddress != null) {
+                    shipment.setAddress(defaultAddress);
+                }
+                
                 shipmentRepository.save(shipment);
             }
         }
@@ -288,6 +298,16 @@ public class ShipmentController {
             shipment.setOrder(order);
             shipment.setStatus(OrderStatus.PROCESSING);
             shipment.setShippingCost(25000.0);
+            
+            Address defaultAddress = addressRepository.findByUser_Id(order.getCustomer().getId()).stream()
+                    .filter(a -> Boolean.TRUE.equals(a.getIsDefault()))
+                    .findFirst()
+                    .orElseGet(() -> addressRepository.findByUser_Id(order.getCustomer().getId()).stream().findFirst().orElse(null));
+            
+            if (defaultAddress != null) {
+                shipment.setAddress(defaultAddress);
+            }
+            
             shipmentRepository.save(shipment);
         }
         
