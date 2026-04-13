@@ -11,6 +11,7 @@ import myjerseyy.psbf_jersey.entity.OrderStatus;
 import myjerseyy.psbf_jersey.entity.Payment;
 import myjerseyy.psbf_jersey.entity.PaymentStatus;
 import myjerseyy.psbf_jersey.entity.PromoCode;
+import myjerseyy.psbf_jersey.entity.Review;
 import myjerseyy.psbf_jersey.entity.Shipment;
 import myjerseyy.psbf_jersey.entity.Team;
 import myjerseyy.psbf_jersey.entity.User;
@@ -22,12 +23,14 @@ import myjerseyy.psbf_jersey.repository.LeagueRepository;
 import myjerseyy.psbf_jersey.repository.OrderRepository;
 import myjerseyy.psbf_jersey.repository.PaymentRepository;
 import myjerseyy.psbf_jersey.repository.PromoCodeRepository;
+import myjerseyy.psbf_jersey.repository.ReviewRepository;
 import myjerseyy.psbf_jersey.repository.ShipmentRepository;
 import myjerseyy.psbf_jersey.repository.TeamRepository;
 import myjerseyy.psbf_jersey.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -48,6 +51,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final AddressRepository addressRepository;
     private final FaqRepository faqRepository;
     private final PaymentRepository paymentRepository;
+    private final ReviewRepository reviewRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DatabaseSeeder(UserRepository userRepository, 
@@ -56,6 +60,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                          BrandRepository brandRepository, PromoCodeRepository promoCodeRepository,
                          ShipmentRepository shipmentRepository, AddressRepository addressRepository,
                          FaqRepository faqRepository, PaymentRepository paymentRepository,
+                         ReviewRepository reviewRepository,
                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jerseyRepository = jerseyRepository;
@@ -68,6 +73,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         this.addressRepository = addressRepository;
         this.faqRepository = faqRepository;
         this.paymentRepository = paymentRepository;
+        this.reviewRepository = reviewRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -97,6 +103,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         
         if (paymentRepository.count() == 0 && orderRepository.count() > 0) {
             seedPayments();
+        }
+        
+        if (reviewRepository.count() == 0 && jerseyRepository.count() > 0 && userRepository.count() > 0) {
+            seedReviews();
         }
     }
 
@@ -484,9 +494,9 @@ public class DatabaseSeeder implements CommandLineRunner {
             {4, 4, 1, OrderStatus.CONFIRMED.ordinal()},
             {5, 5, 0, OrderStatus.COMPLETED.ordinal()},
             {6, 6, 0, OrderStatus.PROCESSING.ordinal()},
-            {7, 7, 2, OrderStatus.DELIVERED.ordinal()},
+            {7, 7, 2, OrderStatus.SHIPPED.ordinal()},
             {8, 8, 0, OrderStatus.SHIPPED.ordinal()},
-            {9, 9, 1, OrderStatus.COMPLETED.ordinal()},
+            {9, 9, 1, OrderStatus.PENDING.ordinal()},
             {10, 10, 0, OrderStatus.CANCELLED.ordinal()},
             {11, 11, 3, OrderStatus.PROCESSING.ordinal()},
             {12, 12, 0, OrderStatus.PENDING.ordinal()},
@@ -564,7 +574,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             
             orderRepository.save(order);
 
-            if (status == OrderStatus.PROCESSING || status == OrderStatus.SHIPPED || status == OrderStatus.DELIVERED) {
+            if (status == OrderStatus.PROCESSING || status == OrderStatus.SHIPPED || status == OrderStatus.COMPLETED) {
                 Shipment shipment = new Shipment();
                 shipment.setOrder(order);
                 shipment.setShippingCost(15000.0 + (int)(Math.random() * 35000));
@@ -586,8 +596,8 @@ public class DatabaseSeeder implements CommandLineRunner {
                     
                     if (status == OrderStatus.SHIPPED) {
                         shipment.setStatus(OrderStatus.SHIPPED);
-                    } else if (status == OrderStatus.DELIVERED) {
-                        shipment.setStatus(OrderStatus.DELIVERED);
+                    } else if (status == OrderStatus.COMPLETED) {
+                        shipment.setStatus(OrderStatus.COMPLETED);
                     }
                 }
                 
@@ -657,7 +667,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                 .filter(o -> {
                     OrderStatus s = o.getStatus();
                     return s == OrderStatus.PROCESSING || s == OrderStatus.SHIPPED || 
-                           s == OrderStatus.DELIVERED || s == OrderStatus.RETURNED;
+                           s == OrderStatus.COMPLETED || s == OrderStatus.RETURNED;
                 })
                 .toList();
 
@@ -927,5 +937,48 @@ public class DatabaseSeeder implements CommandLineRunner {
         }
 
         System.out.println("=== Database Seeder: " + count + " Payments berhasil diinsert ===");
+    }
+
+    @Transactional
+    public void seedReviews() {
+        List<Order> completedOrders = orderRepository.findByStatusWithItems(OrderStatus.COMPLETED);
+        
+        List<Order> finishedOrders = completedOrders.stream()
+                .filter(o -> o.getItems() != null && !o.getItems().isEmpty())
+                .toList();
+
+        if (finishedOrders.isEmpty()) {
+            System.out.println("=== Seed Reviews: Tidak ada order Selesai/Terkirim ===");
+            return;
+        }
+
+        String[] comments = {
+            "Bahannya adem banget! Jahitannya rapi dan kualitas premium. Jujur exceed expectations!",
+            "Jersey sesuai pesanan, pengiriman cepat. Bahan bagus untuk harga segini. Recomended!",
+            "Sudah 2x beli di sini dan selalu puas. CS ramah, jersey original 100%. Top!"
+        };
+
+        LocalDateTime baseDate = LocalDateTime.now().minusDays(1);
+        int reviewCount = 0;
+
+        for (int i = 0; i < finishedOrders.size(); i++) {
+            Order order = finishedOrders.get(i);
+            
+            User user = order.getCustomer();
+            Jersey jersey = order.getItems().get(0).getJersey();
+
+            Review review = new Review();
+            review.setOrder(order);
+            review.setUser(user);
+            review.setJersey(jersey);
+            review.setRating((i % 2 == 0) ? 5 : 4);
+            review.setComment(comments[i % comments.length]);
+            review.setReviewDate(baseDate.minusHours(i * 2));
+            
+            reviewRepository.save(review);
+            reviewCount++;
+        }
+
+        System.out.println("=== Database Seeder: " + reviewCount + " Review berhasil diinsert ===");
     }
 }

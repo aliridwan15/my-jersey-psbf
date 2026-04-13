@@ -43,10 +43,9 @@ public class ShipmentController {
             OrderStatus.CONFIRMED,
             OrderStatus.PROCESSING,
             OrderStatus.SHIPPED,
-            OrderStatus.DELIVERED,
-            OrderStatus.RETURNED,
+            OrderStatus.COMPLETED,
             OrderStatus.CANCELLED,
-            OrderStatus.COMPLETED
+            OrderStatus.RETURNED
     );
 
     @GetMapping
@@ -191,8 +190,8 @@ public class ShipmentController {
         orderRepository.save(order);
 
         String message = "Status berhasil diupdate!";
-        if (status == OrderStatus.DELIVERED) {
-            message = "Pengiriman berhasil diselesaikan!";
+        if (status == OrderStatus.COMPLETED) {
+            message = "Order berhasil diselesaikan!";
         } else if (status == OrderStatus.RETURNED) {
             message = "Order ditandai sebagai dikembalikan!";
         } else if (status == OrderStatus.CANCELLED) {

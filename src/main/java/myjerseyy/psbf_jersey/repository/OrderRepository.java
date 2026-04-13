@@ -28,4 +28,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query(value = "SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.promoCode", 
            countQuery = "SELECT COUNT(DISTINCT o) FROM Order o")
     Page<Order> findAllWithPromoCode(Pageable pageable);
+    
+    @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items WHERE o.status = :status")
+    List<Order> findByStatusWithItems(@Param("status") myjerseyy.psbf_jersey.entity.OrderStatus status);
 }
