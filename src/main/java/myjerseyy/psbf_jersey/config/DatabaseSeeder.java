@@ -10,6 +10,7 @@ import myjerseyy.psbf_jersey.entity.Order;
 import myjerseyy.psbf_jersey.entity.OrderItem;
 import myjerseyy.psbf_jersey.entity.OrderStatus;
 import myjerseyy.psbf_jersey.entity.Payment;
+import myjerseyy.psbf_jersey.entity.PaymentMethod;
 import myjerseyy.psbf_jersey.entity.PaymentStatus;
 import myjerseyy.psbf_jersey.entity.PromoCode;
 import myjerseyy.psbf_jersey.entity.Review;
@@ -24,6 +25,7 @@ import myjerseyy.psbf_jersey.repository.FaqRepository;
 import myjerseyy.psbf_jersey.repository.JerseyRepository;
 import myjerseyy.psbf_jersey.repository.LeagueRepository;
 import myjerseyy.psbf_jersey.repository.OrderRepository;
+import myjerseyy.psbf_jersey.repository.PaymentMethodRepository;
 import myjerseyy.psbf_jersey.repository.PaymentRepository;
 import myjerseyy.psbf_jersey.repository.PromoCodeRepository;
 import myjerseyy.psbf_jersey.repository.ReviewRepository;
@@ -58,6 +60,7 @@ public class DatabaseSeeder implements CommandLineRunner {
     private final ReviewRepository reviewRepository;
     private final CartRepository cartRepository;
     private final WishlistRepository wishlistRepository;
+    private final PaymentMethodRepository paymentMethodRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DatabaseSeeder(UserRepository userRepository, 
@@ -67,7 +70,7 @@ public class DatabaseSeeder implements CommandLineRunner {
                          ShipmentRepository shipmentRepository, AddressRepository addressRepository,
                          FaqRepository faqRepository, PaymentRepository paymentRepository,
                          ReviewRepository reviewRepository, CartRepository cartRepository,
-                         WishlistRepository wishlistRepository,
+                         WishlistRepository wishlistRepository, PaymentMethodRepository paymentMethodRepository,
                          PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.jerseyRepository = jerseyRepository;
@@ -83,6 +86,7 @@ public class DatabaseSeeder implements CommandLineRunner {
         this.reviewRepository = reviewRepository;
         this.cartRepository = cartRepository;
         this.wishlistRepository = wishlistRepository;
+        this.paymentMethodRepository = paymentMethodRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -124,6 +128,10 @@ public class DatabaseSeeder implements CommandLineRunner {
         
         if (wishlistRepository.count() == 0 && jerseyRepository.count() > 0 && userRepository.count() > 0) {
             seedWishlists();
+        }
+        
+        if (paymentMethodRepository.count() == 0) {
+            seedPaymentMethods();
         }
     }
 
@@ -1123,5 +1131,33 @@ public class DatabaseSeeder implements CommandLineRunner {
         }
         
         System.out.println("=== Database Seeder: " + wishlistCount + " Wishlists berhasil diinsert ===");
+    }
+    
+    private void seedPaymentMethods() {
+        PaymentMethod bca = new PaymentMethod();
+        bca.setProviderName("Bank BCA");
+        bca.setAccountNumber("1234567890");
+        bca.setAccountHolder("Ali Ridley");
+        bca.setInstruction("1. Transfer ke nomor rekening di atas\n2. Simpan bukti transfer\n3. Upload bukti transfer saat checkout");
+        bca.setIsActive(true);
+        paymentMethodRepository.save(bca);
+        
+        PaymentMethod mandiri = new PaymentMethod();
+        mandiri.setProviderName("Bank Mandiri");
+        mandiri.setAccountNumber("1300098765432");
+        mandiri.setAccountHolder("Ali Ridley");
+        mandiri.setInstruction("1. Transfer ke nomor rekening di atas\n2. Simpan bukti transfer\n3. Upload bukti transfer saat checkout");
+        mandiri.setIsActive(true);
+        paymentMethodRepository.save(mandiri);
+        
+        PaymentMethod qris = new PaymentMethod();
+        qris.setProviderName("QRIS All Payment");
+        qris.setAccountNumber("myjersey Official");
+        qris.setAccountHolder("myjersey Official");
+        qris.setInstruction("1. Scan QR code menggunakan aplikasi e-wallet\n2. Pastikan nominal sesuai\n3. Screenshot bukti pembayaran");
+        qris.setIsActive(true);
+        paymentMethodRepository.save(qris);
+        
+        System.out.println("=== Database Seeder: 3 Payment Methods berhasil diinsert ===");
     }
 }
