@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import jakarta.servlet.http.HttpSession;
+import org.springframework.web.multipart.MultipartFile;
+import java.util.Base64;
 import java.util.Optional;
 
 @Controller
@@ -82,7 +84,8 @@ public class JerseyController {
             @RequestParam("stockM") Integer stockM,
             @RequestParam("stockL") Integer stockL,
             @RequestParam("stockXL") Integer stockXL,
-            @RequestParam("brand.id") Long brandId) {
+            @RequestParam("brand.id") Long brandId,
+            @RequestParam(value = "file", required = false) MultipartFile file) {
         
         Jersey jersey;
         
@@ -98,6 +101,14 @@ public class JerseyController {
         jersey.setStockM(stockM != null ? stockM : 0);
         jersey.setStockL(stockL != null ? stockL : 0);
         jersey.setStockXL(stockXL != null ? stockXL : 0);
+        
+        if (file != null && !file.isEmpty()) {
+            try {
+                jersey.setImageBase64(Base64.getEncoder().encodeToString(file.getBytes()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         
         if (teamId != null) {
             Team team = teamRepository.findById(teamId).orElse(null);

@@ -200,15 +200,15 @@
                    th:href="@{/product/{id}(id=${jersey.id})}" 
                    class="card-hover group bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
                     <div class="relative h-64 bg-gray-100 overflow-hidden">
-                        <img th:if="${#lists.isEmpty(jersey.images)}" 
+                        <img th:if="${jersey.imageBase64 != null and !jersey.imageBase64.isEmpty()}" 
+                             th:src="@{'data:image/png;base64,' + ${jersey.imageBase64}}" 
+                             th:alt="${jersey.name}" 
+                             class="w-full h-full object-cover rounded-t-lg" />
+                        
+                        <img th:unless="${jersey.imageBase64 != null and !jersey.imageBase64.isEmpty()}" 
                              src="https://images.unsplash.com/photo-1583316174775-bd6dc0e9f298?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
                              alt="Dummy Jersey" 
-                             class="w-full h-full object-cover" />
-                        
-                        <img th:unless="${#lists.isEmpty(jersey.images)}" 
-                             th:src="@{'data:image/png;base64,' + ${jersey.images[0].imageData}}" 
-                             th:alt="${jersey.name}" 
-                             class="w-full h-full object-cover" />
+                             class="w-full h-full object-cover rounded-t-lg" />
                         
                         <div class="absolute top-3 left-3">
                             <span class="bg-primary text-white text-xs font-semibold px-2 py-1 rounded">BARU</span>
