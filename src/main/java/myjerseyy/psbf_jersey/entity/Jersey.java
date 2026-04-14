@@ -7,7 +7,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import myjerseyy.psbf_jersey.entity.Brand;
 import myjerseyy.psbf_jersey.entity.League;
+import myjerseyy.psbf_jersey.entity.ProductImage;
 import myjerseyy.psbf_jersey.entity.Team;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "jerseys")
@@ -54,7 +57,33 @@ public class Jersey {
     @JoinColumn(name = "brand_id")
     private Brand brand;
 
+    @OneToMany(mappedBy = "jersey", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("isPrimary DESC, createdAt ASC")
+    private List<ProductImage> images = new ArrayList<>();
+
     public Jersey() {
+    }
+
+    public List<ProductImage> getImages() {
+        return images;
+    }
+
+    public void setImages(List<ProductImage> images) {
+        this.images = images;
+    }
+
+    public void addImage(ProductImage image) {
+        images.add(image);
+        image.setJersey(this);
+    }
+
+    public void removeImage(ProductImage image) {
+        images.remove(image);
+        image.setJersey(null);
+    }
+
+    public boolean hasImages() {
+        return images != null && !images.isEmpty();
     }
 
     public Long getId() {

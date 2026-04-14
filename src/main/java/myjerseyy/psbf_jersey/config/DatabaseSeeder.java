@@ -283,15 +283,11 @@ public class DatabaseSeeder implements CommandLineRunner {
             return;
         }
 
-        String[] brandNames = {"Nike", "Adidas", "Puma", "Castore", "Macron", "Kappa", "Umbro"};
+        String[] brandNames = {"Nike", "Adidas", "Puma"};
         String[] brandDescriptions = {
             "Merek perlengkapan olahraga raksasa asal Amerika Serikat.",
             "Perusahaan multinasional asal Jerman dengan desain tiga garis paralel.",
-            "Merek pakaian olahraga global asal Jerman berlogo macan kumba.",
-            "Produsen pakaian olahraga premium asal Inggris.",
-            "Perusahaan perlengkapan olahraga asal Italia.",
-            "Merek pakaian olahraga Italia dengan logo ikonik Omini.",
-            "Pemasok perlengkapan olahraga legendaris asal Inggris."
+            "Merek pakaian olahraga global asal Jerman berlogo macan kumba."
         };
 
         for (int i = 0; i < brandNames.length; i++) {
@@ -301,7 +297,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             brandRepository.save(brand);
         }
 
-        System.out.println("=== Database Seeder: 7 Brands berhasil diinsert ===");
+        System.out.println("=== Database Seeder: 3 Brands berhasil diinsert ===");
     }
 
     private void seedLeagues() {

@@ -7,8 +7,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.security.web.context.SecurityContextRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -20,25 +18,17 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityContextRepository securityContextRepository() {
-        return new HttpSessionSecurityContextRepository();
-    }
-
-    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf
                 .ignoringRequestMatchers("/h2-console/**")
-            )
-            .securityContext(context -> context
-                .securityContextRepository(securityContextRepository())
             )
             .sessionManagement(session -> session
                 .maximumSessions(1)
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
-                .requestMatchers("/login", "/register", "/auth/**").permitAll()
+                .requestMatchers("/", "/products/**", "/product/**", "/login", "/register", "/auth/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/admin/**").authenticated()
                 .anyRequest().permitAll()
@@ -50,7 +40,13 @@ public class SecurityConfig {
                 .loginPage("/login")
                 .permitAll()
             )
-            .logout(logout -> logout.permitAll());
+            .logout(logout -> logout
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+            );
         
         return http.build();
     }

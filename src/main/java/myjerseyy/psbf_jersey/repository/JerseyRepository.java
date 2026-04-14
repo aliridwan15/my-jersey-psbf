@@ -10,4 +10,6 @@ import java.util.List;
 public interface JerseyRepository extends JpaRepository<Jersey, Long> {
     List<Jersey> findByNameContainingIgnoreCase(String name);
     List<Jersey> findByTeamNameContainingIgnoreCase(String teamName);
+    
+    List<Jersey> findTop8ByOrderByIdDesc();
 }

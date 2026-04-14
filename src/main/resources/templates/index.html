@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>myjersey - Toko Jersey Terpercaya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#BD114A',
+                        secondary: '#1A1A2E',
+                    },
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        .hero-gradient {
+            background: linear-gradient(135deg, #1A1A2E 0%, #2D2D44 50%, #1A1A2E 100%);
+        }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(189, 17, 74, 0.15); }
+        .promo-badge {
+            background: linear-gradient(135deg, #BD114A 0%, #FF1744 100%);
+            animation: pulse-glow 2s infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(189, 17, 74, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(189, 17, 74, 0.6); }
+        }
+        .category-card { transition: all 0.3s ease; }
+        .category-card:hover { transform: translateY(-4px); box-shadow: 0 10px 25px rgba(189, 17, 74, 0.15); }
+        .text-shadow { text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        @keyframes slide-in {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slide-in { animation: slide-in 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-50 font-poppins">
+
+    <!-- Header -->
+    <th:block th:replace="~{fragments/header :: header}" />
+
+    <!-- Logout Message Toast -->
+    <div th:if="${showLogoutMessage}" class="fixed top-20 right-4 z-50 animate-slide-in">
+        <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            <span>Anda telah berhasil logout!</span>
+        </div>
+    </div>
+
+    <!-- Hero Banner -->
+    <section class="hero-gradient relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute top-0 left-0 w-96 h-96 bg-primary rounded-full filter blur-3xl"></div>
+            <div class="absolute bottom-0 right-0 w-96 h-96 bg-primary rounded-full filter blur-3xl"></div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 relative">
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="text-white">
+                    <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
+                        Jersey <span class="text-primary">Premium</span> Quality
+                    </h1>
+                    <p class="text-gray-300 text-lg mb-6 max-w-lg">
+                        Dapatkan jersey original dan replika berkualitas tinggi dari liga terbaik dunia. Harga terjangkau, kualitas terjamin!
+                    </p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="/products" class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-semibold hover:bg-primary/90 transition-colors">
+                            <span>Lihat Katalog</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                            </svg>
+                        </a>
+                        <a href="/products?sort=newest" class="inline-flex items-center gap-2 px-6 py-3 border-2 border-white text-white rounded-full font-semibold hover:bg-white hover:text-secondary transition-colors">
+                            Jersey Terbaru
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Promo Card -->
+                <div th:if="${activePromo != null}" class="relative">
+                    <div class="promo-badge text-white p-8 rounded-2xl text-center">
+                        <div class="absolute -top-4 -right-4 bg-yellow-400 text-secondary px-4 py-1 rounded-full text-sm font-bold transform rotate-12">
+                            PROMO!
+                        </div>
+                        <p class="text-lg mb-2" th:text="${activePromo.campaignName}">Flash Sale</p>
+                        <div class="text-5xl md:text-6xl font-bold mb-2">
+                            <span th:text="${#numbers.formatInteger(activePromo.discountPercent, 0)}">20</span>%
+                        </div>
+                        <p class="text-white/80 mb-4">Diskon untuk semua produk</p>
+                        <div class="bg-white/20 backdrop-blur rounded-lg px-4 py-2 inline-block">
+                            <span class="font-mono font-bold tracking-wider" th:text="${activePromo.code}">MYJERSEY20</span>
+                        </div>
+                        <p class="text-sm text-white/60 mt-4">
+                            Berlaku sampai <span th:text="${activePromo.endDate}">31 Dec 2024</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Default Promo (if no active promo) -->
+                <div th:unless="${activePromo != null}" class="relative">
+                    <div class="bg-white/10 backdrop-blur text-white p-8 rounded-2xl text-center border border-white/20">
+                        <div class="text-5xl mb-4">⚽</div>
+                        <p class="text-xl font-semibold mb-2">Selamat Datang!</p>
+                        <p class="text-white/70">Jelajahi koleksi jersey terbaik kami</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- League Categories Section -->
+    <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-secondary mb-4">Kategori Liga</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">Pilih liga favoritmu dan temukan jersey tim terbaik</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <a th:each="league : ${leagues}" 
+                   th:href="@{/products(league=${league.id})}" 
+                   class="category-card group flex flex-col items-center justify-center bg-gray-100 rounded-xl p-6 text-center hover:bg-primary hover:text-white transition-all duration-300 cursor-pointer">
+                    <div class="w-16 h-16 mx-auto mb-3 bg-white rounded-full flex items-center justify-center shadow-md group-hover:bg-white/90 transition-colors">
+                        <img th:if="${league.logo}" th:src="${league.logo}" alt="${league.name}" class="w-10 h-10 object-contain">
+                        <span th:unless="${league.logo}" class="text-2xl">⚽</span>
+                    </div>
+                    <h3 class="font-semibold text-secondary group-hover:text-white transition-colors mb-2" th:text="${league.name}">Premier League</h3>
+                    <span class="text-xs text-white bg-primary px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300">Lihat Produk</span>
+                </a>
+                
+                <!-- Show message if no leagues -->
+                <div th:if="${#lists.isEmpty(leagues)}" class="col-span-full text-center py-8">
+                    <p class="text-gray-500">Segera hadir berbagai liga menarik!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Brand Section -->
+    <section class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-secondary mb-4">Brand Partners</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">Jersey berkualitas dari brand ternama</p>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                <a th:each="brand : ${brands}" 
+                   th:href="@{/products(brand=${brand.id})}" 
+                   class="card-hover bg-white rounded-xl p-6 flex items-center justify-center shadow-sm hover:shadow-lg">
+                    <div th:if="${brand.logo != null and brand.logo.length > 0}">
+                        <img th:src="@{'data:image/*;base64,' + ${brand.logoBase64}}" 
+                             alt="${brand.name}" 
+                             class="max-h-12 max-w-full object-contain grayscale hover:grayscale-0 transition-all">
+                    </div>
+                    <div th:unless="${brand.logo != null and brand.logo.length > 0}" class="text-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                            <span class="text-2xl font-bold text-gray-400" th:text="${#strings.substring(brand.name, 0, 1)}">B</span>
+                        </div>
+                        <p class="font-medium text-secondary" th:text="${brand.name}">Brand</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Catalog Section -->
+    <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-12">
+                <div>
+                    <h2 class="text-3xl md:text-4xl font-bold text-secondary mb-2">Jersey Terbaru</h2>
+                    <p class="text-gray-600">Koleksi jersey terpopuler dan terbaru</p>
+                </div>
+                <a href="/products" class="mt-4 md:mt-0 inline-flex items-center gap-2 text-primary font-semibold hover:underline">
+                    Lihat Semua
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                </a>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <a th:each="jersey : ${latestJerseys}" 
+                   th:href="@{/product/{id}(id=${jersey.id})}" 
+                   class="card-hover group bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                    <div class="relative h-64 bg-gray-100 overflow-hidden">
+                        <img th:if="${#lists.isEmpty(jersey.images)}" 
+                             src="https://images.unsplash.com/photo-1583316174775-bd6dc0e9f298?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
+                             alt="Dummy Jersey" 
+                             class="w-full h-full object-cover" />
+                        
+                        <img th:unless="${#lists.isEmpty(jersey.images)}" 
+                             th:src="@{'data:image/png;base64,' + ${jersey.images[0].imageData}}" 
+                             th:alt="${jersey.name}" 
+                             class="w-full h-full object-cover" />
+                        
+                        <div class="absolute top-3 left-3">
+                            <span class="bg-primary text-white text-xs font-semibold px-2 py-1 rounded">BARU</span>
+                        </div>
+                        <div class="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors"></div>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-xs text-gray-500 mb-1" th:text="${jersey.league?.name} ?: 'Unknown League'">Premier League</p>
+                        <h3 class="font-semibold text-secondary mb-2 line-clamp-2 group-hover:text-primary transition-colors" th:text="${jersey.name}">Manchester United Home Jersey 2024</h3>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded" th:text="${jersey.brand?.name} ?: 'Unknown'">Nike</span>
+                            <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded" th:text="${jersey.team?.name} ?: 'Unknown'">Man United</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-lg font-bold text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(jersey.price, 0, 'POINT', 0, 'POINT')}">Rp 350.000</span>
+                            <div class="flex items-center gap-1 text-yellow-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                </svg>
+                                <span class="text-xs text-gray-500">4.8</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Empty state -->
+            <div th:if="${#lists.isEmpty(latestJerseys)}" class="text-center py-16">
+                <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Belum Ada Jersey</h3>
+                <p class="text-gray-500 mb-4">Segera hadir jersey-jersey menarik untukmu!</p>
+                <a href="/admin/jerseys" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Tambah Jersey
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-secondary mb-2">Pengiriman Cepat</h3>
+                    <p class="text-gray-500 text-sm">Dikirim dalam 1-2 hari kerja</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-secondary mb-2">Produk Original</h3>
+                    <p class="text-gray-500 text-sm">Kualitas terjamin 100%</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-secondary mb-2">Pembayaran Aman</h3>
+                    <p class="text-gray-500 text-sm">Multiple payment methods</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                    </div>
+                    <h3 class="font-semibold text-secondary mb-2">Customer Service</h3>
+                    <p class="text-gray-500 text-sm">24/7 siap membantu</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <th:block th:replace="~{fragments/footer :: footer}" />
+
+</body>
+</html>

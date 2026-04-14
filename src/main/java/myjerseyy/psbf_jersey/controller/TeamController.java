@@ -34,24 +34,35 @@ public class TeamController {
     @GetMapping
     public String listTeams(
             @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) String error,
+            @RequestParam(required = false) String success,
             Model model, HttpSession session) {
         
-        int safePage = Math.max(0, page);
+        long totalCount = teamRepository.count();
+        int safePage = (totalCount > 0) ? Math.max(0, Math.min(page, (int)((totalCount - 1) / 10))) : 0;
         
         Pageable pageable = PageRequest.of(safePage, 10);
         Page<Team> teamPage = teamRepository.findAll(pageable);
         
         model.addAttribute("teams", teamPage);
         model.addAttribute("currentPage", teamPage.getNumber());
-        model.addAttribute("totalPages", teamPage.getTotalPages());
+        model.addAttribute("totalPages", Math.max(1, teamPage.getTotalPages()));
         model.addAttribute("totalItems", teamPage.getTotalElements());
+        
+        if ("size".equals(error)) {
+            model.addAttribute("errorMessage", "Ukuran logo maksimal 500KB");
+        } else if ("upload".equals(error)) {
+            model.addAttribute("errorMessage", "Gagal upload logo");
+        }
+        if (success != null) {
+            model.addAttribute("successMessage", "Data tim berhasil disimpan");
+        }
         
         model.addAttribute("leagues", leagueRepository.findAll());
 
         Long userId = (Long) session.getAttribute("userId");
         if (userId != null) {
-            Optional<User> currentUser = userRepository.findById(userId);
-            currentUser.ifPresent(user -> model.addAttribute("currentUser", user));
+            userRepository.findById(userId).ifPresent(user -> model.addAttribute("currentUser", user));
         }
 
         return "kelola-tim";
@@ -63,16 +74,19 @@ public class TeamController {
             @RequestParam(value = "file", required = false) MultipartFile file,
             @RequestParam(value = "leagueId", required = false) Long leagueId) {
         
-        if (leagueId != null) {
+        if (leagueId != null && leagueId > 0) {
             leagueRepository.findById(leagueId).ifPresent(team::setLeague);
         }
         
         if (file != null && !file.isEmpty()) {
+            if (file.getSize() > 500 * 1024) {
+                return "redirect:/admin/teams?error=size";
+            }
             try {
                 String base64 = Base64.getEncoder().encodeToString(file.getBytes());
                 team.setLogo(base64);
             } catch (Exception e) {
-                e.printStackTrace();
+                return "redirect:/admin/teams?error=upload";
             }
         } else if (team.getId() != null) {
             teamRepository.findById(team.getId()).ifPresent(existingTeam -> {
@@ -84,7 +98,7 @@ public class TeamController {
         
         teamRepository.save(team);
         
-        return "redirect:/admin/teams";
+        return "redirect:/admin/teams?success=save";
     }
 
     @GetMapping("/delete/{id}")

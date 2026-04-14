@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,8 +33,8 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private SecurityContextRepository securityContextRepository;
+    private final SecurityContextRepository securityContextRepository = 
+        new HttpSessionSecurityContextRepository();
 
     private final SecurityContextHolderStrategy securityContextHolderStrategy = 
         SecurityContextHolder.getContextHolderStrategy();
@@ -50,11 +51,6 @@ public class AuthController {
 
     @GetMapping("/register")
     public String registerPage() {
-        return "auth";
-    }
-
-    @GetMapping("/")
-    public String homePage() {
         return "auth";
     }
 
@@ -83,8 +79,13 @@ public class AuthController {
             
             session.setAttribute("username", username);
             session.setAttribute("loggedInUser", user);
+            session.setAttribute("userId", user.getId());
+            session.setAttribute("userRole", user.getRole());
             
-            return "redirect:/admin.html";
+            if ("ADMIN".equalsIgnoreCase(user.getRole())) {
+                return "redirect:/admin.html";
+            }
+            return "redirect:/";
         }
         
         redirectAttributes.addFlashAttribute("error", "Username atau Password salah!");
