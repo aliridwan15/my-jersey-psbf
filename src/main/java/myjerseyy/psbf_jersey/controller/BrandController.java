@@ -52,7 +52,7 @@ public class BrandController {
             currentUser.ifPresent(user -> model.addAttribute("currentUser", user));
         }
 
-        return "kelola-brand";
+        return "admin/kelola-brand";
     }
 
     @PostMapping("/save")

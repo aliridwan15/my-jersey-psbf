@@ -37,7 +37,7 @@ public class PaymentMethodController {
         List<PaymentMethod> paymentMethods = paymentMethodRepository.findAll();
         model.addAttribute("paymentMethods", paymentMethods);
         
-        return "kelola-metode-pembayaran";
+        return "admin/kelola-metode-pembayaran";
     }
     
     @PostMapping("/save")

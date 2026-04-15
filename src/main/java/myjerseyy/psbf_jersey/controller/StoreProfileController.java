@@ -44,7 +44,7 @@ public class StoreProfileController {
         
         model.addAttribute("storeProfile", storeProfile);
         
-        return "pengaturan-toko";
+        return "admin/pengaturan-toko";
     }
     
     @PostMapping("/admin/store-profile/save")

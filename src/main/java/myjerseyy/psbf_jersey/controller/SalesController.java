@@ -73,6 +73,6 @@ public class SalesController {
         model.addAttribute("chartLabels", chartLabels);
         model.addAttribute("chartData", chartData);
         
-        return "laporan-penjualan";
+        return "admin/laporan-penjualan";
     }
 }

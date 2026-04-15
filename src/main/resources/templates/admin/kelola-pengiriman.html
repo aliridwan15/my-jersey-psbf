@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kelola Pengiriman - myjersey Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#BD114A',
+                        secondary: '#EEEEEE',
+                        accent: '#547792',
+                        success: '#7FB77E',
+                        warning: '#FAE251',
+                    },
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        
+        .sidebar-menu-item:hover { background-color: rgba(255, 255, 255, 0.15); }
+        .sidebar-menu-item.active { background-color: rgba(255, 255, 255, 0.25); }
+        
+        .profile-dropdown { transform-origin: bottom; transition: all 0.15s ease-out; }
+        .profile-dropdown.hidden { opacity: 0; transform: scaleY(0.95); }
+        .profile-dropdown:not(.hidden) { opacity: 1; transform: scaleY(1); }
+        
+        .table-row:hover { background-color: rgba(189, 17, 74, 0.03); }
+        
+        .modal-overlay { transition: opacity 0.2s ease-out; }
+        .modal-overlay.hidden { opacity: 0; pointer-events: none; }
+        .modal-overlay:not(.hidden) { opacity: 1; }
+        
+        .modal-content { transition: all 0.2s ease-out; }
+        .modal-overlay.hidden .modal-content { transform: scale(0.95); opacity: 0; }
+        .modal-overlay:not(.hidden) .modal-content { transform: scale(1); opacity: 1; }
+        
+        #sidebar { transition: transform 300ms ease-in-out; }
+        #mainContent { transition: margin-left 300ms ease-in-out; }
+        
+        .burger-btn { transition: all 0.2s ease; }
+        .burger-btn:hover { background-color: rgba(189, 17, 74, 0.1); }
+        .burger-btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="bg-gray-100 font-poppins">
+    
+    <!-- Main Container -->
+    <div class="flex min-h-screen">
+        
+        <!-- Sidebar Fragment -->
+        <aside th:replace="~{fragments/sidebar :: sidebar(activeMenu='shipment')}"></aside>
+        
+        <!-- ========== MAIN CONTENT ========== -->
+        <main id="mainContent" class="flex-1 ml-64 transition-all duration-300 ease-in-out">
+            
+            <!-- Header with Hamburger Menu -->
+            <header class="bg-[#EEEEEE] shadow-sm sticky top-0 z-40">
+                <div class="flex items-center px-6 py-4">
+                    <button id="burgerBtn" type="button" class="burger-btn flex items-center justify-center w-10 h-10 rounded-lg hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/30" aria-label="Toggle Sidebar">
+                        <div class="flex flex-col items-center justify-center space-y-1.5">
+                            <span class="block w-6 h-0.5 bg-[#BD114A] rounded-full"></span>
+                            <span class="block w-6 h-0.5 bg-[#BD114A] rounded-full"></span>
+                            <span class="block w-6 h-0.5 bg-[#BD114A] rounded-full"></span>
+                        </div>
+                    </button>
+                    <div class="ml-4">
+                        <h2 class="text-lg font-semibold text-gray-800">Kelola Pengiriman</h2>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Content -->
+            <div class="p-6">
+                
+                <!-- Alert Messages -->
+                <div th:if="${successMessage}" class="mb-4 p-4 bg-success/10 text-success rounded-lg text-sm font-medium flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span th:text="${successMessage}"></span>
+                </div>
+                
+                <div th:if="${errorMessage}" class="mb-4 p-4 bg-red-50 text-red-600 rounded-lg text-sm font-medium flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span th:text="${errorMessage}"></span>
+                </div>
+                
+                <!-- Filter -->
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                    <h3 class="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                        </svg>
+                        Filter Status
+                    </h3>
+                    <div class="flex flex-wrap gap-2">
+                        <a th:href="@{/admin/shipments}" 
+                           th:classappend="${selectedStatus == null} ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            Semua
+                        </a>
+                        <th:block th:each="s : ${statuses}">
+                            <a th:href="@{/admin/shipments(status=${s.name()})}" 
+                               th:classappend="${selectedStatus == s.name()} ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
+                               class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                               th:text="${s.displayName}">Status</a>
+                        </th:block>
+                    </div>
+                </div>
+                
+                <!-- Table -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-primary text-white">
+                                <tr>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide">ID Order</th>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide">Pelanggan</th>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide">Kurir</th>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide">No. Resi</th>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide">Alamat Tujuan</th>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide text-center">Status</th>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide text-center">Detail</th>
+                                    <th class="px-6 py-4 text-sm font-semibold tracking-wide text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr th:if="${orders == null or orders.isEmpty()}">
+                                    <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                        </svg>
+                                        <p class="font-medium">Tidak ada data</p>
+                                    </td>
+                                </tr>
+                                <th:block th:each="order : ${orders}">
+                                    <tr class="table-row hover:bg-gray-50 transition-colors">
+                                        <td class="px-6 py-4">
+                                            <span class="font-semibold text-gray-800" th:text="'#ORD-' + ${#numbers.formatInteger(order.id, 3)}">#ORD-001</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                                                    <span class="text-xs font-semibold text-accent" th:text="${#strings.substring(order.customer.name, 0, 1).toUpperCase()}">A</span>
+                                                </div>
+                                                <div>
+                                                    <p class="text-sm font-medium text-gray-800" th:text="${order.customer.name}">Nama</p>
+                                                    <p class="text-xs text-gray-500" th:text="${order.customer.username}">username</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-gray-600" th:text="${order.shipment?.courierName != null ? order.shipment.courierName : '-'}">JNE</td>
+                                        <td class="px-6 py-4">
+                                            <span th:if="${order.shipment?.trackingNumber != null and !order.shipment.trackingNumber.isEmpty()}" 
+                                                  class="px-3 py-1 bg-gray-100 text-gray-700 text-xs font-mono font-semibold rounded-lg"
+                                                  th:text="${order.shipment.trackingNumber}">JP123456789</span>
+                                            <span th:unless="${order.shipment?.trackingNumber != null and !order.shipment.trackingNumber.isEmpty()}" 
+                                                  class="text-gray-400 text-xs italic">Belum ada resi</span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div th:if="${order.shipment?.address != null}">
+                                                <p class="text-sm text-gray-600" th:text="${order.shipment.address.city + ' ' + (order.shipment.address.postalCode != null ? order.shipment.address.postalCode : '')}">Jakarta 12345</p>
+                                                <button type="button" 
+                                                        th:attr="data-fulladdress=${order.shipment.address.fullAddress}, data-city=${order.shipment.address.city}, data-postalcode=${order.shipment.address.postalCode}, data-title=${order.shipment.address.title}"
+                                                        onclick="openAddressModal(this)"
+                                                        class="text-xs text-primary hover:text-pink-700 font-medium mt-1">
+                                                    Lihat Detail
+                                                </button>
+                                            </div>
+                                            <span th:unless="${order.shipment?.address != null}" class="text-gray-400 text-xs italic">-</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span th:class="'px-3 py-1 rounded-full text-xs font-bold ' + ${order.status.colorClass}" th:text="${order.status.displayName}">PROCESSING</span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <button type="button" th:onclick="'openDetailModal(' + ${order.id} + ')'" class="inline-flex items-center justify-center w-9 h-9 bg-gray-50 text-gray-600 rounded-lg hover:bg-accent hover:text-white transition-colors border border-gray-200" title="Lihat Detail">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <div class="flex items-center justify-center gap-2">
+                                                
+                                                <!-- CONFIRMED: Proses button -->
+                                                <form th:if="${order.status.name() == 'CONFIRMED'}" th:action="@{/admin/shipments/process}" method="POST" class="inline">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                    <input type="hidden" name="orderId" th:value="${order.id}">
+                                                    <button type="submit" class="flex items-center justify-center w-9 h-9 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors border border-blue-100"
+                                                            title="Proses Pengiriman">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                                
+                                                <!-- PROCESSING: Input/Update Resi button -->
+                                                <button th:if="${order.status.name() == 'PROCESSING'}"
+                                                        type="button"
+                                                        th:attr="data-shipmentid=${order.shipment?.id}, data-orderid=${order.id}, data-courier=${order.shipment?.courierName}, data-tracking=${order.shipment?.trackingNumber}, data-address=${order.shipment?.address?.fullAddress}, data-cost=${order.shipment?.shippingCost}, data-addressid=${order.shipment?.address?.id}"
+                                                        onclick="openResiModal(this)"
+                                                        class="flex items-center justify-center w-9 h-9 transition-colors border"
+                                                        th:classappend="${order.shipment != null and order.shipment.trackingNumber != null and !order.shipment.trackingNumber.isEmpty()} ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-500 hover:text-white border-yellow-200' : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border-blue-100'"
+                                                        th:title="${order.shipment != null and order.shipment.trackingNumber != null and !order.shipment.trackingNumber.isEmpty()} ? 'Update Resi' : 'Input Resi'">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path th:if="${order.shipment != null and order.shipment.trackingNumber != null and !order.shipment.trackingNumber.isEmpty()}" stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        <path th:unless="${order.shipment != null and order.shipment.trackingNumber != null and !order.shipment.trackingNumber.isEmpty()}" stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                </button>
+                                                
+                                                <!-- SHIPPED: Selesaikan button (langsung) -->
+                                                <form th:if="${order.status.name() == 'SHIPPED'}" th:action="@{/admin/shipments/complete/{id}(id=${order.id})}" method="POST" class="inline">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                    <button type="submit" class="flex items-center justify-center w-9 h-9 bg-success/10 text-success rounded-lg hover:bg-success hover:text-white transition-colors border border-success/20"
+                                                            title="Tandai Selesai">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                                
+                                                <!-- COMPLETED: Selesai badge -->
+                                                <span th:if="${order.status.name() == 'COMPLETED'}" class="inline-flex items-center px-3 py-1 bg-success/10 text-success text-xs font-bold rounded-full border border-success/20">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                    Selesai
+                                                </span>
+                                                
+                                                <!-- SHIPPED or COMPLETED: Kembalikan -->
+                                                <form th:if="${order.status.name() == 'SHIPPED' or order.status.name() == 'COMPLETED'}" th:action="@{/admin/shipments/return/{id}(id=${order.id})}" method="POST" class="inline">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                    <button type="submit" class="flex items-center justify-center w-9 h-9 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-500 hover:text-white transition-colors border border-orange-100"
+                                                            title="Kembalikan">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                                
+                                                <!-- CONFIRMED, PENDING: Batalkan -->
+                                                <form th:if="${order.status.name() == 'CONFIRMED' or order.status.name() == 'PENDING'}" th:action="@{/admin/shipments/cancel/{id}(id=${order.id})}" method="POST" class="inline">
+                                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                                                    <button type="submit" class="flex items-center justify-center w-9 h-9 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors border border-red-100"
+                                                            title="Batalkan">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </th:block>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+            </div>
+        </main>
+    </div>
+    
+    <!-- ========== ADDRESS MODAL ========== -->
+    <div id="addressModal" class="modal-overlay hidden fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden border-t-4 border-accent">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Detail Alamat
+                </h3>
+                <button type="button" onclick="closeModal('addressModal')" class="text-gray-400 hover:text-red-500 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <span class="inline-flex items-center px-3 py-1 bg-accent/10 text-accent text-xs font-semibold rounded-lg" id="addressTitle">Rumah</span>
+                </div>
+                <p id="addressFull" class="text-gray-700 whitespace-pre-wrap">Alamat lengkap akan muncul di sini</p>
+                <div class="mt-4 pt-4 border-t border-gray-100">
+                    <p class="text-sm text-gray-500">
+                        <span id="addressCity">Kota</span> <span id="addressPostalCode">12345</span>
+                    </p>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-100 flex justify-end">
+                <button type="button" onclick="closeModal('addressModal')" class="px-5 py-2.5 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 font-bold transition-colors">Tutup</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ========== INPUT RESI MODAL ========== -->
+    <div id="resiModal" class="modal-overlay hidden fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+        <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden border-t-4 border-primary">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Input Nomor Resi
+                </h3>
+                <button type="button" onclick="closeModal('resiModal')" class="text-gray-400 hover:text-red-500 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <form th:action="@{/admin/shipments/update-resi}" method="POST" class="p-6 space-y-5">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <input type="hidden" name="orderId" id="resiOrderId">
+                <input type="hidden" name="addressId" id="resiAddressId">
+                <input type="hidden" id="modalShipmentId">
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Kurir Pengiriman</label>
+                    <select name="courierName" id="modalCourier" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-white transition-colors">
+                        <option value="">-- Pilih Kurir --</option>
+                        <option value="JNE Express">JNE Express</option>
+                        <option value="J&T Express">J&T Express</option>
+                        <option value="SiCepat">SiCepat</option>
+                        <option value="AnterAja">AnterAja</option>
+                        <option value="POS Indonesia">POS Indonesia</option>
+                        <option value="TIKI">TIKI</option>
+                        <option value="Ninja Express">Ninja Express</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Nomor Resi</label>
+                    <input type="text" name="trackingNumber" id="modalTrackingNumber" required class="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary focus:outline-none bg-gray-50 focus:bg-white transition-colors font-mono" placeholder="Masukkan nomor resi">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Alamat Tujuan</label>
+                    <textarea id="modalAddress" readonly rows="3" class="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-100 text-gray-600 text-sm resize-none"></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-2">Ongkos Kirim (Rp)</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">Rp</span>
+                        <input type="number" name="shippingCost" id="modalShippingCost" readonly class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl bg-gray-100 text-gray-600">
+                    </div>
+                </div>
+                
+                <div class="pt-4 flex justify-end gap-3">
+                    <button type="button" onclick="closeModal('resiModal')" class="px-5 py-2.5 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 font-bold transition-colors">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 text-white bg-primary rounded-xl hover:bg-pink-800 font-bold shadow-md hover:shadow-lg transition-all">Simpan & Kirim</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- ========== DETAIL MODALS FOR EACH ORDER ========== -->
+    <th:block th:each="order : ${orders}">
+        <div th:id="'detailModal-' + ${order.id}" class="modal-overlay hidden fixed inset-0 z-[999] bg-black/60 backdrop-blur-sm flex items-center justify-center">
+            <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 overflow-hidden border-t-4 border-accent">
+                <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        Detail Transaksi - Order #<span th:text="${#numbers.formatInteger(order.id, 3)}">001</span>
+                    </h3>
+                    <button type="button" th:onclick="'closeModal(\'detailModal-' + ${order.id} + '\')'" class="text-gray-400 hover:text-red-500 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <!-- Promo Info Banner -->
+                    <div th:if="${order.promoCode != null}" class="mb-4 p-4 bg-success/10 rounded-xl border border-success/20">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-success/20 rounded-lg flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-success" th:text="${order.promoCode.campaignName}">Campaign Name</p>
+                                <p class="text-xs text-gray-500">
+                                    Kode: <span class="font-bold text-accent" th:text="${order.promoCode.code}">CODE</span>
+                                    <span class="mx-2">|</span>
+                                    Diskon: <span class="font-bold text-success" th:text="${#numbers.formatDecimal(order.promoCode.discountPercent, 1, 0)} + '%'">10%</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Nama Jersey</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Size</th>
+                                    <th class="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Qty</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Harga</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr th:each="item : ${order.items}" class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-4 py-3">
+                                        <p class="text-sm font-medium text-gray-800" th:text="${item.jersey.name}">Jersey Name</p>
+                                        <p class="text-xs text-gray-500" th:text="${item.jersey.team != null ? item.jersey.team.name : '-'}">Team Name</p>
+                                    </td>
+                                    <td class="px-4 py-3 text-center">
+                                        <span class="inline-flex items-center justify-center w-8 h-8 bg-accent/10 text-accent text-sm font-bold rounded" th:text="${item.size}">L</span>
+                                    </td>
+                                    <td class="px-4 py-3 text-center text-sm font-medium text-gray-800" th:text="${item.quantity}">1</td>
+                                    <td class="px-4 py-3 text-right text-sm font-medium text-gray-800">
+                                        Rp <span th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}">899.000</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="bg-gray-50">
+                                <tr>
+                                    <td colspan="3" class="px-4 py-3 text-right text-sm font-bold text-gray-800">Subtotal:</td>
+                                    <td class="px-4 py-3 text-right text-sm font-medium text-gray-600">
+                                        Rp <span th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 0, 'POINT')}">500.000</span>
+                                    </td>
+                                </tr>
+                                <tr th:if="${order.discountAmount != null && order.discountAmount > 0}">
+                                    <td colspan="3" class="px-4 py-2 text-right text-sm font-medium text-success">Diskon (<span th:text="${order.promoCode.discountPercent}">10</span>%):</td>
+                                    <td class="px-4 py-2 text-right text-sm font-medium text-success">
+                                        - Rp <span th:text="${#numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'POINT')}">50.000</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3" class="px-4 py-3 text-right text-base font-bold text-gray-800">Total Bayar:</td>
+                                    <td class="px-4 py-3 text-right text-base font-bold text-primary">
+                                        Rp <span th:text="${#numbers.formatDecimal(order.finalPrice != null ? order.finalPrice : order.totalPrice, 0, 'COMMA', 0, 'POINT')}">450.000</span>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-100 flex justify-end">
+                    <button type="button" th:onclick="'closeModal(\'detailModal-' + ${order.id} + '\')'" class="px-5 py-2.5 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 font-bold transition-colors">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </th:block>
+    
+    <script>
+        // SIDEBAR TOGGLE
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('mainContent');
+        const burgerBtn = document.getElementById('burgerBtn');
+        let sidebarOpen = true;
+        
+        burgerBtn.addEventListener('click', function() {
+            sidebarOpen = !sidebarOpen;
+            if (sidebarOpen) {
+                sidebar.style.transform = 'translateX(0)';
+                mainContent.style.marginLeft = '256px';
+            } else {
+                sidebar.style.transform = 'translateX(-100%)';
+                mainContent.style.marginLeft = '0';
+            }
+        });
+        
+        // MODAL FUNCTIONS
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+        
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+        
+        // ADDRESS MODAL
+        function openAddressModal(button) {
+            document.getElementById('addressTitle').textContent = button.getAttribute('data-title') || 'Alamat';
+            document.getElementById('addressFull').textContent = button.getAttribute('data-fulladdress') || '-';
+            document.getElementById('addressCity').textContent = button.getAttribute('data-city') || '-';
+            document.getElementById('addressPostalCode').textContent = button.getAttribute('data-postalcode') || '';
+            openModal('addressModal');
+        }
+        
+        // RESI MODAL - version that gets data from row columns
+        function openResiModalFromRow(button, courier, tracking, addressText, costValue, shipmentId, orderId, addressId) {
+            document.getElementById('modalShipmentId').value = shipmentId || '';
+            document.getElementById('resiOrderId').value = orderId || '';
+            document.getElementById('resiAddressId').value = addressId || '';
+            document.getElementById('modalAddress').value = (addressText && addressText !== 'null' && addressText !== '') ? addressText : '-';
+            document.getElementById('modalTrackingNumber').value = (tracking && tracking !== 'null' && tracking !== '') ? tracking : '';
+            document.getElementById('modalShippingCost').value = (costValue && costValue !== 'null' && costValue !== '') ? costValue : '25000';
+            
+            // Set courier dropdown
+            var courierSelect = document.getElementById('modalCourier');
+            if (courier && courier !== 'null' && courier !== '') {
+                courierSelect.value = courier;
+            } else {
+                courierSelect.value = '';
+            }
+            
+            openModal('resiModal');
+        }
+        
+        // RESI MODAL - fallback from data attributes
+        function openResiModal(button) {
+            var shipmentId = button.getAttribute('data-id');
+            var orderId = button.getAttribute('data-orderid');
+            var courier = button.getAttribute('data-courier');
+            var tracking = button.getAttribute('data-tracking');
+            var addressText = button.getAttribute('data-address');
+            var costValue = button.getAttribute('data-cost');
+            var addressId = button.getAttribute('data-addressid');
+            
+            openResiModalFromRow(button, courier, tracking, addressText, costValue, shipmentId, orderId, addressId);
+        }
+        
+        // DETAIL MODAL
+        function openDetailModal(orderId) {
+            openModal('detailModal-' + orderId);
+        }
+        
+        // Close modal on backdrop click
+        document.querySelectorAll('.modal-overlay').forEach(function(modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+        });
+        
+        // PROFILE DROPDOWN
+        const profileBtn = document.getElementById('profileBtn');
+        const profileDropdown = document.getElementById('profileDropdown');
+        const dropdownArrow = document.getElementById('dropdownArrow');
+        
+        if (profileBtn && profileDropdown) {
+            profileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('hidden');
+                dropdownArrow.classList.toggle('rotate-180');
+            });
+            
+            document.addEventListener('click', function() {
+                if (!profileDropdown.classList.contains('hidden')) {
+                    profileDropdown.classList.add('hidden');
+                    dropdownArrow.classList.remove('rotate-180');
+                }
+            });
+        }
+    </script>
+    
+</body>
+</html>

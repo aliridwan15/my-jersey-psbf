@@ -56,7 +56,7 @@ public class PromoCodeController {
             currentUser.ifPresent(user -> model.addAttribute("currentUser", user));
         }
 
-        return "kelola-kupon";
+        return "admin/kelola-kupon";
     }
 
     @PostMapping("/save")

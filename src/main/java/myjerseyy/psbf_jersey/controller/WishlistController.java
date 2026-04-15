@@ -54,7 +54,7 @@ public class WishlistController {
         model.addAttribute("hasPrevious", wishlistPage.hasPrevious());
         model.addAttribute("showPagination", wishlistPage.getTotalElements() > 10);
         
-        return "pantau-wishlist";
+        return "admin/pantau-wishlist";
     }
     
     @GetMapping("/delete/{id}")

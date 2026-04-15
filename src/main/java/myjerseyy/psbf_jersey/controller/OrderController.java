@@ -104,7 +104,7 @@ public class OrderController {
         model.addAttribute("hasPrevious", orderPage.hasPrevious());
         model.addAttribute("showPagination", orderPage.getTotalElements() > 10);
         
-        return "kelola-transaksi";
+        return "admin/kelola-transaksi";
     }
 
     @PostMapping("/update-status")

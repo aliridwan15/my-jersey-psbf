@@ -74,7 +74,7 @@ public class PaymentController {
             currentUser.ifPresent(user -> model.addAttribute("currentUser", user));
         }
 
-        return "kelola-pembayaran";
+        return "admin/kelola-pembayaran";
     }
 
     @PostMapping("/approve/{id}")

@@ -52,7 +52,7 @@ public class AddressController {
             userRepository.findById(currentUserId).ifPresent(u -> model.addAttribute("currentUser", u));
         }
         
-        return "kelola-alamat";
+        return "admin/kelola-alamat";
     }
 
     @PostMapping("/save")

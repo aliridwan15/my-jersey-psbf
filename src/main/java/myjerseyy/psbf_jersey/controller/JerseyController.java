@@ -70,7 +70,7 @@ public class JerseyController {
         model.addAttribute("teams", teamRepository.findAll());
         model.addAttribute("leagues", leagueRepository.findAll());
         
-        return "kelola-jersey";
+        return "admin/kelola-jersey";
     }
 
     @PostMapping("/save")

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,20 +34,115 @@ public class ProfileController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
     @GetMapping
     public String profilePage(Model model, HttpSession session) {
-        model.addAttribute("activePage", "profile");
-        model.addAttribute("pageTitle", "Kelola Profil");
-        
         User currentUser = getUserFromSession(session);
-        if (currentUser != null) {
-            model.addAttribute("currentUser", currentUser);
+        if (currentUser == null) {
+            return "redirect:/login";
         }
         
-        return "kelola-profil";
+        model.addAttribute("currentUser", currentUser);
+        
+        return "admin/kelola-profil";
+    }
+
+    @PostMapping("/update-profile")
+    public String updateProfile(@RequestParam("name") String name,
+                               @RequestParam("username") String username,
+                               @RequestParam(value = "gender", required = false) String gender,
+                               @RequestParam(value = "address", required = false) String address,
+                               HttpSession session,
+                               RedirectAttributes redirectAttributes) {
+        User user = getUserFromSession(session);
+        
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        user.setName(name);
+        user.setUsername(username);
+        user.setGender(gender != null ? gender : "");
+        user.setAddress(address != null ? address : "");
+        session.setAttribute("username", username);
+        
+        userRepository.save(user);
+        redirectAttributes.addFlashAttribute("passwordSuccess", "Data profil berhasil diperbarui!");
+        
+        return "redirect:/admin/profile";
+    }
+
+    @PostMapping("/update-photo")
+    public String updatePhoto(@RequestParam("photo") MultipartFile file, 
+                              HttpSession session,
+                              RedirectAttributes redirectAttributes) {
+        if (file == null || file.isEmpty()) {
+            redirectAttributes.addFlashAttribute("passwordError", "File foto tidak boleh kosong!");
+            return "redirect:/admin/profile";
+        }
+        
+        User user = getUserFromSession(session);
+        if (user != null) {
+            try {
+                user.setProfilePicture(file.getBytes());
+                userRepository.save(user);
+                redirectAttributes.addFlashAttribute("passwordSuccess", "Foto profil berhasil diperbarui!");
+            } catch (IOException e) {
+                redirectAttributes.addFlashAttribute("passwordError", "Gagal mengupload foto!");
+                e.printStackTrace();
+            }
+        }
+        
+        return "redirect:/admin/profile";
+    }
+
+    @PostMapping("/delete-photo")
+    public String deletePhoto(HttpSession session, RedirectAttributes redirectAttributes) {
+        User user = getUserFromSession(session);
+        if (user != null) {
+            user.setProfilePicture(null);
+            userRepository.save(user);
+            redirectAttributes.addFlashAttribute("passwordSuccess", "Foto profil berhasil dihapus!");
+        }
+        return "redirect:/admin/profile";
+    }
+
+    @PostMapping("/update-password")
+    public String updatePassword(@RequestParam("oldPassword") String oldPassword,
+                                 @RequestParam("newPassword") String newPassword,
+                                 @RequestParam("confirmPassword") String confirmPassword,
+                                 HttpSession session,
+                                 RedirectAttributes redirectAttributes) {
+        User user = getUserFromSession(session);
+        
+        if (user == null) {
+            return "redirect:/login";
+        }
+        
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            redirectAttributes.addFlashAttribute("passwordError", "Password lama tidak sesuai");
+            return "redirect:/admin/profile";
+        }
+        
+        if (!newPassword.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("passwordError", "Password baru dan konfirmasi password tidak cocok");
+            return "redirect:/admin/profile";
+        }
+        
+        if (newPassword.length() < 6) {
+            redirectAttributes.addFlashAttribute("passwordError", "Password minimal 6 karakter");
+            return "redirect:/admin/profile";
+        }
+        
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        redirectAttributes.addFlashAttribute("passwordSuccess", "Password berhasil diperbarui!");
+        
+        return "redirect:/admin/profile";
     }
 
     @GetMapping("/photo/{userId}")
+    @ResponseBody
     public ResponseEntity<byte[]> getProfilePhoto(@PathVariable Long userId,
                                                   @RequestParam(required = false) Long t) {
         Optional<User> userOpt = userRepository.findById(userId);
@@ -136,102 +232,5 @@ public class ProfileController {
         }
         
         return userRepository.findById(1L).orElse(null);
-    }
-
-    @PostMapping("/update-photo")
-    public String updatePhoto(@RequestParam("photo") MultipartFile file, HttpSession session) {
-        if (file == null || file.isEmpty()) {
-            return "redirect:/admin/profile";
-        }
-        
-        User user = getUserFromSession(session);
-        if (user != null) {
-            try {
-                user.setProfilePicture(file.getBytes());
-                userRepository.save(user);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        
-        return "redirect:/admin/profile";
-    }
-
-    @PostMapping("/delete-photo")
-    public String deletePhoto(HttpSession session) {
-        User user = getUserFromSession(session);
-        if (user != null) {
-            user.setProfilePicture(null);
-            userRepository.save(user);
-        }
-        return "redirect:/admin/profile";
-    }
-
-    @PostMapping("/update-profile")
-    public String updateProfile(@RequestParam("name") String name,
-                                @RequestParam("username") String username,
-                                @RequestParam(value = "address", required = false) String address,
-                                @RequestParam(value = "gender", required = false) String gender,
-                                HttpSession session) {
-        User user = getUserFromSession(session);
-        
-        if (user != null) {
-            user.setName(name);
-            user.setUsername(username);
-            if (address != null) {
-                user.setAddress(address);
-            }
-            user.setGender(gender != null ? gender : "");
-            session.setAttribute("username", username);
-            userRepository.save(user);
-        }
-        
-        return "redirect:/admin/profile";
-    }
-
-    @PostMapping("/update-password")
-    public String updatePassword(@RequestParam("oldPassword") String oldPassword,
-                                 @RequestParam("newPassword") String newPassword,
-                                 @RequestParam("confirmPassword") String confirmPassword,
-                                 HttpSession session,
-                                 Model model) {
-        User user = getUserFromSession(session);
-        
-        if (user == null) {
-            return "redirect:/login";
-        }
-        
-        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            model.addAttribute("passwordError", "Password lama tidak sesuai");
-            return "kelola-profil";
-        }
-        
-        if (!newPassword.equals(confirmPassword)) {
-            model.addAttribute("passwordError", "Password baru dan konfirmasi password tidak cocok");
-            return "kelola-profil";
-        }
-        
-        if (newPassword.length() < 6) {
-            model.addAttribute("passwordError", "Password minimal 6 karakter");
-            return "kelola-profil";
-        }
-        
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-        
-        session.setAttribute("loggedInUser", user);
-        model.addAttribute("passwordSuccess", "Password berhasil diperbarui");
-        return "kelola-profil";
-    }
-
-    @GetMapping("/check-photo/{userId}")
-    @ResponseBody
-    public boolean checkPhotoExists(@PathVariable Long userId) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        if (userOpt.isPresent()) {
-            byte[] photo = userOpt.get().getProfilePicture();
-            return photo != null && photo.length > 0;
-        }
-        return false;
     }
 }

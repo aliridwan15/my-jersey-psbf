@@ -54,7 +54,7 @@ public class CartController {
         model.addAttribute("hasPrevious", cartPage.hasPrevious());
         model.addAttribute("showPagination", cartPage.getTotalElements() > 10);
         
-        return "pantau-keranjang";
+        return "admin/pantau-keranjang";
     }
     
     @GetMapping("/delete/{id}")

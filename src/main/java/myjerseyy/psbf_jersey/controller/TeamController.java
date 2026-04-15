@@ -65,7 +65,7 @@ public class TeamController {
             userRepository.findById(userId).ifPresent(user -> model.addAttribute("currentUser", user));
         }
 
-        return "kelola-tim";
+        return "admin/kelola-tim";
     }
 
     @PostMapping("/save")

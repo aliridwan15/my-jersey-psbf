@@ -47,7 +47,7 @@ public class AdminController {
         model.addAttribute("totalPendapatan", totalPendapatan);
         model.addAttribute("recentOrders", recentOrders);
         
-        return "admin";
+        return "admin/admin";
     }
 
     @GetMapping("/kelola-tim.html")

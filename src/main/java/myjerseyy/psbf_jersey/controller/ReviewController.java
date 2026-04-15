@@ -53,7 +53,7 @@ public class ReviewController {
             currentUser.ifPresent(user -> model.addAttribute("currentUser", user));
         }
 
-        return "kelola-ulasan";
+        return "admin/kelola-ulasan";
     }
 
     @GetMapping("/delete/{id}")

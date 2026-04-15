@@ -132,7 +132,7 @@ public class ShipmentController {
         model.addAttribute("addressesByUser", addressesByUser);
         model.addAttribute("selectedStatus", filterStatus);
 
-        return "kelola-pengiriman";
+        return "admin/kelola-pengiriman";
     }
 
     @PostMapping("/update-resi")

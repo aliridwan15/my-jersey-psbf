@@ -49,7 +49,7 @@ public class UserController {
             currentUser.ifPresent(user -> model.addAttribute("currentUser", user));
         }
 
-        return "kelola-user";
+        return "admin/kelola-user";
     }
 
     @PostMapping("/save")

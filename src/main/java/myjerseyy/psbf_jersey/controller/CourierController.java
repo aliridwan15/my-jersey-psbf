@@ -37,7 +37,7 @@ public class CourierController {
         List<Courier> couriers = courierRepository.findAll();
         model.addAttribute("couriers", couriers);
         
-        return "kelola-kurir";
+        return "admin/kelola-kurir";
     }
     
     @PostMapping("/save")

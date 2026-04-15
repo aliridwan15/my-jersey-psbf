@@ -55,7 +55,7 @@ public class FAQController {
             currentUser.ifPresent(user -> model.addAttribute("currentUser", user));
         }
 
-        return "kelola-faq";
+        return "admin/kelola-faq";
     }
 
     @PostMapping("/save")

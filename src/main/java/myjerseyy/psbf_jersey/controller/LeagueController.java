@@ -53,7 +53,7 @@ public class LeagueController {
             currentUser.ifPresent(user -> model.addAttribute("currentUser", user));
         }
 
-        return "kelola-liga";
+        return "admin/kelola-liga";
     }
 
     @PostMapping("/save")
