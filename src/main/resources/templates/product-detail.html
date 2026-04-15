@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${jersey.name} + ' - myjersey'">Detail Jersey - myjersey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#BD114A',
+                        secondary: '#1A1A2E',
+                    },
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 font-poppins">
+
+    <nav th:replace="~{fragments/header :: header}"></nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Breadcrumb -->
+        <nav class="mb-6">
+            <ol class="flex items-center gap-2 text-sm">
+                <li><a href="/" class="text-gray-500 hover:text-primary transition-colors">Beranda</a></li>
+                <li class="text-gray-400">/</li>
+                <li><a href="/products" class="text-gray-500 hover:text-primary transition-colors">Produk</a></li>
+                <li class="text-gray-400">/</li>
+                <li class="text-primary font-medium" th:text="${jersey.name}">Jersey Name</li>
+            </ol>
+        </nav>
+
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div class="grid md:grid-cols-2 gap-8 p-8">
+                
+                <!-- Product Image -->
+                <div class="relative">
+                    <div class="aspect-square bg-gray-100 rounded-xl overflow-hidden">
+                        <img th:if="${jersey.imageBase64 != null and !jersey.imageBase64.isEmpty()}" 
+                             th:src="@{'data:image/png;base64,' + ${jersey.imageBase64}}" 
+                             th:alt="${jersey.name}" 
+                             class="w-full h-full object-cover">
+                        <img th:unless="${jersey.imageBase64 != null and !jersey.imageBase64.isEmpty()}" 
+                             src="https://images.unsplash.com/photo-1583316174775-bd6dc0e9f298?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" 
+                             alt="Jersey" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    <div class="absolute top-4 left-4">
+                        <span th:if="${jersey.league != null}" class="bg-secondary/80 text-white text-xs font-medium px-3 py-1 rounded-full" th:text="${jersey.league.name}">Premier League</span>
+                    </div>
+                </div>
+                
+                <!-- Product Info -->
+                <div class="flex flex-col">
+                    <p class="text-sm text-gray-500 mb-2" th:text="${jersey.team?.name} ?: 'Unknown Team'">Team Name</p>
+                    <h1 class="text-3xl font-bold text-secondary mb-4" th:text="${jersey.name}">Jersey Name</h1>
+                    
+                    <div class="flex items-center gap-4 mb-6">
+                        <span class="text-xs px-3 py-1 bg-gray-100 text-gray-600 rounded-full" th:text="${jersey.brand?.name} ?: 'Unknown'">Brand</span>
+                        <div class="flex items-center gap-1 text-yellow-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                            </svg>
+                            <span class="text-sm text-gray-500">4.8 (120 reviews)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <span class="text-4xl font-bold text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(jersey.price, 0, 'POINT', 0, 'POINT')}">Rp 350.000</span>
+                    </div>
+                    
+                    <!-- Stock Info -->
+                    <div class="mb-6 p-4 bg-gray-50 rounded-xl">
+                        <p class="text-sm font-semibold text-gray-700 mb-2">Ketersediaan:</p>
+                        <div class="flex flex-wrap gap-3">
+                            <span class="text-sm px-3 py-1 rounded-full" th:classappend="${jersey.stockS != null and jersey.stockS > 0} ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'">
+                                S: <span th:text="${jersey.stockS ?: 0}">0</span>
+                            </span>
+                            <span class="text-sm px-3 py-1 rounded-full" th:classappend="${jersey.stockM != null and jersey.stockM > 0} ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'">
+                                M: <span th:text="${jersey.stockM ?: 0}">0</span>
+                            </span>
+                            <span class="text-sm px-3 py-1 rounded-full" th:classappend="${jersey.stockL != null and jersey.stockL > 0} ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'">
+                                L: <span th:text="${jersey.stockL ?: 0}">0</span>
+                            </span>
+                            <span class="text-sm px-3 py-1 rounded-full" th:classappend="${jersey.stockXL != null and jersey.stockXL > 0} ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'">
+                                XL: <span th:text="${jersey.stockXL ?: 0}">0</span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Add to Cart Form -->
+                    <form th:action="@{/cart/add}" method="post" class="flex-grow">
+                        <input type="hidden" name="jerseyId" th:value="${jersey.id}" />
+                        <input type="hidden" name="quantity" value="1" />
+                        
+                        <div class="mb-4">
+                            <p class="text-sm font-semibold text-gray-700 mb-2">Pilih Ukuran <span class="text-red-500">*</span></p>
+                            <div class="flex flex-wrap gap-3">
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="size" value="S" class="peer sr-only" required th:disabled="${jersey.stockS == null or jersey.stockS <= 0}">
+                                    <div class="w-12 h-12 flex items-center justify-center rounded-lg border-2 border-gray-300 text-sm font-bold text-gray-700 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white peer-disabled:opacity-40 peer-disabled:cursor-not-allowed transition-all">
+                                        S
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="size" value="M" class="peer sr-only" checked th:disabled="${jersey.stockM == null or jersey.stockM <= 0}">
+                                    <div class="w-12 h-12 flex items-center justify-center rounded-lg border-2 border-gray-300 text-sm font-bold text-gray-700 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white peer-disabled:opacity-40 peer-disabled:cursor-not-allowed transition-all">
+                                        M
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="size" value="L" class="peer sr-only" th:disabled="${jersey.stockL == null or jersey.stockL <= 0}">
+                                    <div class="w-12 h-12 flex items-center justify-center rounded-lg border-2 border-gray-300 text-sm font-bold text-gray-700 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white peer-disabled:opacity-40 peer-disabled:cursor-not-allowed transition-all">
+                                        L
+                                    </div>
+                                </label>
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="size" value="XL" class="peer sr-only" th:disabled="${jersey.stockXL == null or jersey.stockXL <= 0}">
+                                    <div class="w-12 h-12 flex items-center justify-center rounded-lg border-2 border-gray-300 text-sm font-bold text-gray-700 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white peer-disabled:opacity-40 peer-disabled:cursor-not-allowed transition-all">
+                                        XL
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="flex gap-4">
+                            <button type="submit" class="flex-1 bg-primary hover:bg-pink-800 text-white py-4 rounded-xl text-lg font-bold transition-colors flex items-center justify-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                Tambah ke Keranjang
+                            </button>
+                            <button type="button" th:data-jersey-id="${jersey.id}" onclick="toggleWishlist(this)" 
+                                    class="w-14 h-14 border-2 rounded-xl flex items-center justify-center transition-colors"
+                                    th:classappend="${isWishlisted} ? 'border-red-500 text-red-500' : 'border-gray-300 text-gray-400 hover:border-red-500 hover:text-red-500'">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                                     th:attr="fill=${isWishlisted} ? 'currentColor' : 'none'">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Features -->
+                    <div class="mt-8 pt-6 border-t">
+                        <div class="grid grid-cols-3 gap-4 text-center">
+                            <div>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                                </svg>
+                                <p class="text-xs text-gray-500">Pengiriman Cepat</p>
+                            </div>
+                            <div>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                </svg>
+                                <p class="text-xs text-gray-500">Produk Original</p>
+                            </div>
+                            <div>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto mb-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                <p class="text-xs text-gray-500">30 Hari Return</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+    <script>
+        function toggleWishlist(btn) {
+            const jerseyId = btn.getAttribute('data-jersey-id');
+            const svgIcon = btn.querySelector('svg');
+
+            fetch('/wishlist/toggle/' + jerseyId, {
+                method: 'POST'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/login?error=notlogged';
+                        return;
+                    }
+                    throw new Error('Gagal memproses wishlist');
+                }
+                return response.json();
+            })
+            .then(isWishlisted => {
+                if (isWishlisted !== undefined) {
+                    if (isWishlisted) {
+                        btn.classList.remove('text-gray-400', 'border-gray-300');
+                        btn.classList.add('text-red-500', 'border-red-500');
+                        svgIcon.setAttribute('fill', 'currentColor');
+                    } else {
+                        btn.classList.remove('text-red-500', 'border-red-500');
+                        btn.classList.add('text-gray-400', 'border-gray-300');
+                        svgIcon.setAttribute('fill', 'none');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Maaf, ada kesalahan saat memproses Wishlist.');
+            });
+        }
+    </script>
+
+</body>
+</html>

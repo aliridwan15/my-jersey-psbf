@@ -5,15 +5,19 @@ import myjerseyy.psbf_jersey.entity.Jersey;
 import myjerseyy.psbf_jersey.entity.League;
 import myjerseyy.psbf_jersey.entity.PromoCode;
 import myjerseyy.psbf_jersey.entity.StoreProfile;
+import myjerseyy.psbf_jersey.entity.User;
 import myjerseyy.psbf_jersey.repository.BrandRepository;
 import myjerseyy.psbf_jersey.repository.JerseyRepository;
 import myjerseyy.psbf_jersey.repository.LeagueRepository;
 import myjerseyy.psbf_jersey.repository.PromoCodeRepository;
 import myjerseyy.psbf_jersey.repository.StoreProfileRepository;
+import myjerseyy.psbf_jersey.repository.UserRepository;
+import myjerseyy.psbf_jersey.repository.WishlistRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import jakarta.servlet.http.HttpSession;
@@ -38,6 +42,12 @@ public class MainController {
     @Autowired
     private StoreProfileRepository storeProfileRepository;
 
+    @Autowired
+    private WishlistRepository wishlistRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
     @GetMapping("/")
     public String indexPage(
             @RequestParam(required = false) Boolean logout,
@@ -52,8 +62,6 @@ public class MainController {
         PromoCode topPromo = promoCodeRepository.findTopActivePromo(java.time.LocalDate.now())
                 .orElse(null);
 
-        List<League> leagues = leagueRepository.findAll();
-        List<Brand> brands = brandRepository.findAll();
         List<Jersey> latestJerseys = jerseyRepository.findTop8ByOrderByIdDesc();
 
         Optional<StoreProfile> storeProfile = storeProfileRepository.findById(1L);
@@ -63,8 +71,6 @@ public class MainController {
         model.addAttribute("cartCount", cartCount != null ? cartCount : 0);
 
         model.addAttribute("activePromo", topPromo);
-        model.addAttribute("leagues", leagues);
-        model.addAttribute("brands", brands);
         model.addAttribute("latestJerseys", latestJerseys);
         model.addAttribute("currentYear", java.time.Year.now().getValue());
 
@@ -104,9 +110,6 @@ public class MainController {
             jerseys = jerseyRepository.findAll();
         }
         
-        List<League> leagues = leagueRepository.findAll();
-        List<Brand> brands = brandRepository.findAll();
-        
         Optional<StoreProfile> storeProfile = storeProfileRepository.findById(1L);
         storeProfile.ifPresent(profile -> model.addAttribute("storeProfile", profile));
         
@@ -114,11 +117,44 @@ public class MainController {
         model.addAttribute("cartCount", cartCount != null ? cartCount : 0);
         
         model.addAttribute("jerseys", jerseys);
-        model.addAttribute("leagues", leagues);
-        model.addAttribute("brands", brands);
         model.addAttribute("pageTitle", pageTitle);
         model.addAttribute("currentYear", java.time.Year.now().getValue());
         
         return "products";
+    }
+
+    @GetMapping("/product/{id}")
+    public String productDetail(@PathVariable Long id, Model model, HttpSession session) {
+        Optional<Jersey> jerseyOpt = jerseyRepository.findById(id);
+        
+        if (jerseyOpt.isEmpty()) {
+            return "redirect:/products";
+        }
+        
+        Optional<StoreProfile> storeProfile = storeProfileRepository.findById(1L);
+        storeProfile.ifPresent(profile -> model.addAttribute("storeProfile", profile));
+        
+        Integer cartCount = (Integer) session.getAttribute("cartCount");
+        model.addAttribute("cartCount", cartCount != null ? cartCount : 0);
+        
+        String username = (String) session.getAttribute("username");
+        boolean isWishlisted = false;
+        if (username != null) {
+            Optional<User> userOpt = userRepository.findByUsername(username);
+            if (userOpt.isPresent()) {
+                List<Long> wishlistIds = wishlistRepository.findByUserId(userOpt.get().getId())
+                        .stream()
+                        .map(w -> w.getJersey().getId())
+                        .toList();
+                isWishlisted = wishlistIds.contains(id);
+                model.addAttribute("wishlistIds", wishlistIds);
+            }
+        }
+        
+        model.addAttribute("jersey", jerseyOpt.get());
+        model.addAttribute("isWishlisted", isWishlisted);
+        model.addAttribute("currentYear", java.time.Year.now().getValue());
+        
+        return "product-detail";
     }
 }
