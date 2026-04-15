@@ -143,18 +143,43 @@
                     <div class="bg-white rounded-xl shadow-md p-6 sticky top-24">
                         <h3 class="text-lg font-bold text-secondary mb-4">Ringkasan Pesanan</h3>
                         
-                        <div class="space-y-3 mb-4 max-h-64 overflow-y-auto">
+                        <div class="space-y-3 mb-4 max-h-48 overflow-y-auto">
                             <div th:each="item : ${cartItems}" class="flex gap-3">
-                                <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                                <div class="w-14 h-14 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                                     <img th:if="${item.jersey.imageBase64 != null and !item.jersey.imageBase64.isEmpty()}" 
                                          th:src="@{'data:image/png;base64,' + ${item.jersey.imageBase64}}" 
                                          class="w-full h-full object-cover">
                                 </div>
-                                <div>
-                                    <p class="text-sm font-medium" th:text="${item.jersey.name}">Jersey</p>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-medium truncate" th:text="${item.jersey.name}">Jersey</p>
                                     <p class="text-xs text-gray-500" th:text="${item.size} + ' x ' + ${item.quantity}">M x 1</p>
                                 </div>
                             </div>
+                        </div>
+                        
+                        <!-- Coupon Selection -->
+                        <div class="mb-4 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
+                            <label class="block text-sm font-semibold text-green-700 mb-2 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                                Pakai Kupon Diskon
+                            </label>
+                            <div class="flex gap-2">
+                                <select id="promoSelect" onchange="applyPromo()" class="flex-1 px-3 py-2 text-sm border border-green-200 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-400 bg-white">
+                                    <option value="">-- Pilih Kupon --</option>
+                                    <option th:each="promo : ${activePromos}" 
+                                            th:if="${promo.isValid()}"
+                                            th:value="${promo.code}"
+                                            th:data-discount="${promo.discountPercent}"
+                                            th:data-max="${promo.maxDiscount != null ? promo.maxDiscount : 0}"
+                                            th:text="${promo.code} + ' - ' + ${#numbers.formatDecimal(promo.discountPercent, 1, 0)} + '%'">HEMAT10 - 10%</option>
+                                </select>
+                                <button type="button" onclick="clearPromo()" class="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 bg-gray-100 rounded-lg transition-colors">
+                                    Clear
+                                </button>
+                            </div>
+                            <p id="promoInfo" class="text-xs text-green-600 mt-2 hidden"></p>
                         </div>
                         
                         <div class="border-t pt-4 space-y-2">
@@ -166,6 +191,10 @@
                                 <span>Ongkos Kirim</span>
                                 <span id="shippingDisplay">Rp 0</span>
                             </div>
+                            <div id="discountRow" class="flex justify-between text-green-600 hidden">
+                                <span>Diskon</span>
+                                <span id="discountDisplay">-Rp 0</span>
+                            </div>
                             <div class="flex justify-between font-bold text-lg border-t pt-2">
                                 <span>Total</span>
                                 <span id="totalDisplay" class="text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'POINT')}">Rp 0</span>
@@ -176,6 +205,7 @@
                         <input type="hidden" id="shippingCost" name="shippingCost" value="0">
                         <input type="hidden" id="discountAmount" name="discountAmount" value="0">
                         <input type="hidden" id="totalAmount" name="totalAmount" value="0">
+                        <input type="hidden" id="promoCodeInput" name="promoCode" value="">
                         
                         <button type="submit" id="submitBtn" class="w-full bg-gray-300 text-gray-500 py-3 rounded-xl font-bold mt-6 cursor-not-allowed">
                             Lanjut ke Pembayaran
@@ -192,6 +222,9 @@
     <script th:inline="javascript">
         const subtotal = [[${subtotal}]];
         let currentShipping = 0;
+        let currentDiscount = 0;
+        let currentPromoCode = '';
+        let currentMaxDiscount = 0;
         
         function updateTotal() {
             const selectedCourier = document.querySelector('input[name="courierId"]:checked');
@@ -199,19 +232,77 @@
                 currentShipping = parseInt(selectedCourier.dataset.price) || 15000;
             }
             
-            const total = subtotal + currentShipping;
+            calculateTotal();
+            validateForm();
+        }
+        
+        function calculateTotal() {
+            let discount = 0;
+            if (currentPromoCode && currentDiscount > 0) {
+                discount = subtotal * (currentDiscount / 100);
+                if (currentMaxDiscount > 0 && discount > currentMaxDiscount) {
+                    discount = currentMaxDiscount;
+                }
+            }
+            
+            const total = subtotal + currentShipping - discount;
+            currentDiscount = discount;
             
             document.getElementById('subtotalDisplay').textContent = formatRupiah(subtotal);
             document.getElementById('shippingDisplay').textContent = formatRupiah(currentShipping);
             document.getElementById('totalDisplay').textContent = formatRupiah(total);
             document.getElementById('shippingCost').value = currentShipping;
+            document.getElementById('discountAmount').value = discount;
             document.getElementById('totalAmount').value = total;
+            document.getElementById('promoCodeInput').value = currentPromoCode;
             
-            validateForm();
+            const discountRow = document.getElementById('discountRow');
+            const discountDisplay = document.getElementById('discountDisplay');
+            if (discount > 0) {
+                discountRow.classList.remove('hidden');
+                discountDisplay.textContent = '-' + formatRupiah(discount);
+            } else {
+                discountRow.classList.add('hidden');
+            }
+        }
+        
+        function applyPromo() {
+            const select = document.getElementById('promoSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (selectedOption.value) {
+                currentPromoCode = selectedOption.value;
+                currentDiscount = parseFloat(selectedOption.dataset.discount) || 0;
+                currentMaxDiscount = parseFloat(selectedOption.dataset.max) || 0;
+                
+                const discount = subtotal * (currentDiscount / 100);
+                const maxDiscount = currentMaxDiscount > 0 ? Math.min(discount, currentMaxDiscount) : discount;
+                
+                const promoInfo = document.getElementById('promoInfo');
+                promoInfo.classList.remove('hidden');
+                if (currentMaxDiscount > 0) {
+                    promoInfo.textContent = 'Diskon ' + currentDiscount + '% (maks Rp ' + currentMaxDiscount.toLocaleString('id-ID') + ')';
+                } else {
+                    promoInfo.textContent = 'Diskon ' + currentDiscount + '%';
+                }
+            } else {
+                clearPromo();
+            }
+            
+            calculateTotal();
+        }
+        
+        function clearPromo() {
+            currentPromoCode = '';
+            currentDiscount = 0;
+            currentMaxDiscount = 0;
+            document.getElementById('promoSelect').value = '';
+            document.getElementById('promoInfo').classList.add('hidden');
+            calculateTotal();
         }
         
         function formatRupiah(number) {
-            return 'Rp ' + number.toLocaleString('id-ID');
+            return 'Rp ' + Math.round(number).toLocaleString('id-ID');
         }
         
         function validateForm() {
@@ -230,11 +321,12 @@
         }
         
         document.querySelectorAll('input[name="addressId"], input[name="courierId"], input[name="paymentMethodId"]').forEach(input => {
-            input.addEventListener('change', validateForm);
+            input.addEventListener('change', updateTotal);
         });
         
         // Initial validation
         validateForm();
+        calculateTotal();
     </script>
 
 </body>
