@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -51,22 +52,29 @@ public class PaymentController {
         Pageable pageable = PageRequest.of(page, 10, Sort.by(Sort.Direction.DESC, "id"));
         Page<Payment> paymentPage;
 
-        if (status != null && !status.isEmpty()) {
-            try {
-                PaymentStatus paymentStatus = PaymentStatus.valueOf(status.toUpperCase());
-                paymentPage = paymentRepository.findByPaymentStatus(paymentStatus, pageable);
-                model.addAttribute("filterStatus", status);
-            } catch (IllegalArgumentException e) {
+        try {
+            if (status != null && !status.isEmpty()) {
+                try {
+                    PaymentStatus paymentStatus = PaymentStatus.valueOf(status.toUpperCase());
+                    paymentPage = paymentRepository.findByPaymentStatus(paymentStatus, pageable);
+                    model.addAttribute("filterStatus", status);
+                } catch (IllegalArgumentException e) {
+                    paymentPage = paymentRepository.findAll(pageable);
+                }
+            } else {
                 paymentPage = paymentRepository.findAll(pageable);
             }
-        } else {
-            paymentPage = paymentRepository.findAll(pageable);
-        }
 
-        model.addAttribute("payments", paymentPage.getContent());
-        model.addAttribute("currentPage", paymentPage.getNumber());
-        model.addAttribute("totalPages", paymentPage.getTotalPages());
-        model.addAttribute("totalItems", paymentPage.getTotalElements());
+            model.addAttribute("payments", paymentPage.getContent());
+            model.addAttribute("currentPage", paymentPage.getNumber());
+            model.addAttribute("totalPages", paymentPage.getTotalPages());
+            model.addAttribute("totalItems", paymentPage.getTotalElements());
+        } catch (Exception e) {
+            model.addAttribute("payments", java.util.Collections.emptyList());
+            model.addAttribute("currentPage", 0);
+            model.addAttribute("totalPages", 0);
+            model.addAttribute("totalItems", 0);
+        }
 
         Long userId = (Long) session.getAttribute("userId");
         if (userId != null) {
@@ -117,10 +125,27 @@ public class PaymentController {
         return "redirect:/admin/payments";
     }
 
-    @GetMapping("/delete/{id}")
+    @Transactional
+    @PostMapping("/delete/{id}")
     public String deletePayment(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        paymentRepository.deleteById(id);
-        redirectAttributes.addFlashAttribute("successMessage", "Data pembayaran berhasil dihapus!");
+        try {
+            Payment payment = paymentRepository.findById(id).orElse(null);
+            
+            if (payment != null) {
+                Order order = payment.getOrder();
+                if (order != null) {
+                    order.setPayment(null);
+                }
+                payment.setOrder(null);
+                paymentRepository.deleteById(id);
+                redirectAttributes.addFlashAttribute("successMessage", "Data pembayaran berhasil dihapus!");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Pembayaran tidak ditemukan!");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Gagal menghapus: " + e.getMessage());
+        }
+        
         return "redirect:/admin/payments";
     }
 }

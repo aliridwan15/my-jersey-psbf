@@ -3,6 +3,7 @@ package myjerseyy.psbf_jersey.controller;
 import jakarta.servlet.http.HttpSession;
 import myjerseyy.psbf_jersey.entity.*;
 import myjerseyy.psbf_jersey.repository.OrderRepository;
+import myjerseyy.psbf_jersey.repository.ShipmentRepository;
 import myjerseyy.psbf_jersey.repository.UserRepository;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,6 +25,9 @@ public class UserOrderController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ShipmentRepository shipmentRepository;
 
     @GetMapping
     public String myOrdersPage(Model model, HttpSession session) {
@@ -51,9 +55,8 @@ public class UserOrderController {
             if (order.getAddress() != null) {
                 Hibernate.initialize(order.getAddress());
             }
-            if (order.getShipment() != null) {
-                Hibernate.initialize(order.getShipment());
-            }
+            Optional<Shipment> shipment = shipmentRepository.findByOrderId(order.getId());
+            shipment.ifPresent(s -> order.setShipment(s));
         }
 
         model.addAttribute("orders", orders);
@@ -93,9 +96,8 @@ public class UserOrderController {
         if (order.getAddress() != null) {
             Hibernate.initialize(order.getAddress());
         }
-        if (order.getShipment() != null) {
-            Hibernate.initialize(order.getShipment());
-        }
+        Optional<Shipment> shipment = shipmentRepository.findByOrderId(order.getId());
+        shipment.ifPresent(s -> order.setShipment(s));
 
         model.addAttribute("currentUser", currentUser.get());
         model.addAttribute("order", order);
