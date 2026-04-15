@@ -145,13 +145,19 @@ public class OrderController {
         shipment.setOrder(order);
         shipment.setStatus(OrderStatus.PROCESSING);
         
-        Address defaultAddress = addressRepository.findByUser_Id(order.getCustomer().getId()).stream()
-                .filter(a -> Boolean.TRUE.equals(a.getIsDefault()))
-                .findFirst()
-                .orElseGet(() -> addressRepository.findByUser_Id(order.getCustomer().getId()).stream().findFirst().orElse(null));
+        // Copy courier and address from Order
+        if (order.getCourier() != null) {
+            shipment.setCourierName(order.getCourier().getName());
+        } else if (order.getCourierName() != null) {
+            shipment.setCourierName(order.getCourierName());
+        }
         
-        if (defaultAddress != null) {
-            shipment.setAddress(defaultAddress);
+        if (order.getAddress() != null) {
+            shipment.setAddress(order.getAddress());
+        }
+        
+        if (order.getShippingCost() != null) {
+            shipment.setShippingCost(order.getShippingCost());
         }
         
         shipmentRepository.save(shipment);

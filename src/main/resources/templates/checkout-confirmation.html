@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konfirmasi Checkout - myjersey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#BD114A',
+                        secondary: '#1A1A2E',
+                    },
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 font-poppins">
+
+    <nav th:replace="~{fragments/header :: header}"></nav>
+
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <div class="mb-8">
+            <a href="/checkout" class="text-gray-500 hover:text-primary flex items-center gap-2 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Kembali
+            </a>
+            <h1 class="text-3xl font-bold text-secondary">Konfirmasi Pembayaran</h1>
+            <p class="text-gray-500 mt-1">Lengkapi data untuk menyelesaikan pesanan</p>
+        </div>
+
+        <form th:action="@{/checkout/process}" method="POST" enctype="multipart/form-data">
+            <!-- Hidden Data -->
+            <input type="hidden" name="addressId" th:value="${addressId}">
+            <input type="hidden" name="courierId" th:value="${courierId}">
+            <input type="hidden" name="paymentMethodId" th:value="${paymentMethodId}">
+            <input type="hidden" name="shippingCost" th:value="${shippingCost}">
+            <input type="hidden" name="discountAmount" th:value="${discountAmount}">
+            <input type="hidden" name="totalAmount" th:value="${totalAmount}">
+            <input type="hidden" name="promoCode" th:value="${promoCode}">
+
+            <!-- Order Summary Card -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h2 class="text-lg font-bold text-secondary mb-4">Ringkasan Pesanan</h2>
+                
+                <div class="space-y-3 mb-4">
+                    <div th:each="item : ${cartItems}" class="flex gap-3 items-center">
+                        <div class="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                            <img th:if="${item.jersey.imageBase64 != null and !item.jersey.imageBase64.isEmpty()}" 
+                                 th:src="@{'data:image/png;base64,' + ${item.jersey.imageBase64}}" 
+                                 class="w-full h-full object-cover">
+                            <img th:unless="${item.jersey.imageBase64 != null and !item.jersey.imageBase64.isEmpty()}" 
+                                 src="https://images.unsplash.com/photo-1583316174775-bd6dc0e9f298?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                                 class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-secondary line-clamp-1" th:text="${item.jersey.name}">Jersey Name</p>
+                            <p class="text-xs text-gray-500" th:text="${item.size} + ' x ' + ${item.quantity}">M x 1</p>
+                        </div>
+                        <p class="text-sm font-bold text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(item.jersey.price * item.quantity, 0, 'POINT', 0, 'POINT')}">Rp 350.000</p>
+                    </div>
+                </div>
+                
+                <div class="border-t pt-4 space-y-2">
+                    <div class="flex justify-between text-gray-600 text-sm">
+                        <span>Subtotal</span>
+                        <span th:text="'Rp ' + ${#numbers.formatDecimal(subtotal, 0, 'POINT', 0, 'POINT')}">Rp 0</span>
+                    </div>
+                    <div class="flex justify-between text-gray-600 text-sm">
+                        <span>Ongkos Kirim</span>
+                        <span th:text="'Rp ' + ${#numbers.formatDecimal(shippingCost, 0, 'POINT', 0, 'POINT')}">Rp 0</span>
+                    </div>
+                    <div th:if="${discountAmount > 0}" class="flex justify-between text-green-600 text-sm">
+                        <span>Diskon</span>
+                        <span th:text="'- Rp ' + ${#numbers.formatDecimal(discountAmount, 0, 'POINT', 0, 'POINT')}">-Rp 0</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-lg border-t pt-3">
+                        <span>Total Bayar</span>
+                        <span class="text-2xl text-primary" th:text="'Rp ' + ${#numbers.formatDecimal(totalAmount, 0, 'POINT', 0, 'POINT')}">Rp 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Instructions -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h2 class="text-lg font-bold text-secondary mb-4">Instruksi Pembayaran</h2>
+                
+                <div class="p-4 bg-blue-50 rounded-lg mb-4">
+                    <div class="flex items-start gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <p class="font-semibold text-blue-800">Transfer ke:</p>
+                            <p class="text-blue-700 mt-1" th:text="${paymentMethod?.providerName}">BCA</p>
+                            <p class="text-blue-700 font-mono" th:text="${paymentMethod?.accountNumber}">123-456-7890</p>
+                            <p class="text-blue-600 text-sm" th:text="'a/n ' + ${paymentMethod?.accountHolder}">a/n myjersey</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-amber-50 rounded-lg">
+                    <p class="font-semibold text-amber-800">Total yang harus dibayar:</p>
+                    <p class="text-3xl font-bold text-amber-600 mt-1" th:text="'Rp ' + ${#numbers.formatDecimal(totalAmount, 0, 'POINT', 0, 'POINT')}">Rp 0</p>
+                </div>
+            </div>
+
+            <!-- Upload Payment Proof -->
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+                <h2 class="text-lg font-bold text-secondary mb-4">Upload Bukti Transfer</h2>
+                
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-primary transition-colors">
+                    <div class="mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <p class="text-gray-600 mb-2">Klik untuk upload foto struk/screenshot</p>
+                    <p class="text-gray-400 text-sm mb-4">Format: JPG, PNG, atau WEBP (Max. 5MB)</p>
+                    <input type="file" name="paymentProof" id="paymentProof" accept="image/*" class="hidden" onchange="previewImage(this)">
+                    <label for="paymentProof" class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                        Pilih File
+                    </label>
+                </div>
+                
+                <!-- Image Preview -->
+                <div id="imagePreview" class="mt-4 hidden">
+                    <p class="text-sm font-semibold text-gray-700 mb-2">Preview:</p>
+                    <div class="relative inline-block">
+                        <img id="previewImg" src="" alt="Preview" class="max-h-48 rounded-lg border">
+                        <button type="button" onclick="removeImage()" class="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-gray-500 mt-3">
+                    <span class="text-red-500">*</span> Wajib upload bukti transfer untuk verifikasi pembayaran
+                </p>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submitBtn" class="w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-bold text-lg cursor-not-allowed flex items-center justify-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Upload Bukti Transfer Dulu
+            </button>
+        </form>
+    </div>
+
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+
+    <script th:inline="javascript">
+        const totalAmount = [[${totalAmount}]];
+        
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Check file size (5MB max)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('Ukuran file terlalu besar. Maksimal 5MB.');
+                    input.value = '';
+                    return;
+                }
+                
+                // Check file type
+                if (!file.type.startsWith('image/')) {
+                    alert('Hanya file gambar yang diizinkan.');
+                    input.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('imagePreview').classList.remove('hidden');
+                    updateSubmitButton();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function removeImage() {
+            document.getElementById('paymentProof').value = '';
+            document.getElementById('imagePreview').classList.add('hidden');
+            document.getElementById('previewImg').src = '';
+            updateSubmitButton();
+        }
+        
+        function updateSubmitButton() {
+            const fileInput = document.getElementById('paymentProof');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (fileInput.files && fileInput.files.length > 0) {
+                submitBtn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                submitBtn.classList.add('bg-primary', 'hover:bg-pink-800', 'text-white', 'cursor-pointer');
+                submitBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Buat Pesanan
+                `;
+            } else {
+                submitBtn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+                submitBtn.classList.remove('bg-primary', 'hover:bg-pink-800', 'text-white', 'cursor-pointer');
+                submitBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Upload Bukti Transfer Dulu
+                `;
+            }
+        }
+    </script>
+
+</body>
+</html>

@@ -115,10 +115,26 @@ public class ShipmentController {
             if (o.getPromoCode() != null) {
                 Hibernate.initialize(o.getPromoCode());
             }
+            if (o.getAddress() != null) {
+                Hibernate.initialize(o.getAddress());
+            }
+            if (o.getCourier() != null) {
+                Hibernate.initialize(o.getCourier());
+            }
             Optional<Shipment> shipment = shipmentRepository.findByOrderId(o.getId());
             shipment.ifPresent(s -> {
                 if (s.getAddress() != null) {
                     Hibernate.initialize(s.getAddress());
+                }
+                // If shipment doesn't have courier/address, copy from Order
+                if (s.getCourierName() == null && o.getCourierName() != null) {
+                    s.setCourierName(o.getCourierName());
+                }
+                if (s.getAddress() == null && o.getAddress() != null) {
+                    s.setAddress(o.getAddress());
+                }
+                if (s.getShippingCost() == null && o.getShippingCost() != null) {
+                    s.setShippingCost(o.getShippingCost());
                 }
                 o.setShipment(s);
             });
@@ -396,7 +412,7 @@ public class ShipmentController {
         }
         
         Order order = orderOpt.get();
-        if (order.getStatus() != OrderStatus.CONFIRMED && order.getStatus() != OrderStatus.PENDING) {
+        if (order.getStatus() != OrderStatus.CONFIRMED && order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.PROCESSING) {
             redirectAttributes.addFlashAttribute("errorMessage", "Order tidak bisa dibatalkan!");
             return "redirect:/admin/shipments";
         }
