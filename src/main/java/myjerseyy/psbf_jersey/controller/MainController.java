@@ -70,4 +70,55 @@ public class MainController {
 
         return "index";
     }
+
+    @GetMapping("/products")
+    public String productsPage(
+            @RequestParam(required = false) Long leagueId,
+            @RequestParam(required = false) Long brandId,
+            @RequestParam(required = false) String search,
+            Model model,
+            HttpSession session) {
+        
+        List<Jersey> jerseys;
+        String pageTitle = "Semua Produk";
+        
+        if (leagueId != null) {
+            jerseys = jerseyRepository.findByLeagueId(leagueId);
+            Optional<League> league = leagueRepository.findById(leagueId);
+            if (league.isPresent()) {
+                pageTitle = "Koleksi Jersey: " + league.get().getName();
+                model.addAttribute("selectedLeague", league.get());
+            }
+        } else if (brandId != null) {
+            jerseys = jerseyRepository.findByBrandId(brandId);
+            Optional<Brand> brand = brandRepository.findById(brandId);
+            if (brand.isPresent()) {
+                pageTitle = "Koleksi Jersey: " + brand.get().getName();
+                model.addAttribute("selectedBrand", brand.get());
+            }
+        } else if (search != null && !search.isEmpty()) {
+            jerseys = jerseyRepository.findByNameContainingIgnoreCase(search);
+            pageTitle = "Hasil Pencarian: " + search;
+            model.addAttribute("searchQuery", search);
+        } else {
+            jerseys = jerseyRepository.findAll();
+        }
+        
+        List<League> leagues = leagueRepository.findAll();
+        List<Brand> brands = brandRepository.findAll();
+        
+        Optional<StoreProfile> storeProfile = storeProfileRepository.findById(1L);
+        storeProfile.ifPresent(profile -> model.addAttribute("storeProfile", profile));
+        
+        Integer cartCount = (Integer) session.getAttribute("cartCount");
+        model.addAttribute("cartCount", cartCount != null ? cartCount : 0);
+        
+        model.addAttribute("jerseys", jerseys);
+        model.addAttribute("leagues", leagues);
+        model.addAttribute("brands", brands);
+        model.addAttribute("pageTitle", pageTitle);
+        model.addAttribute("currentYear", java.time.Year.now().getValue());
+        
+        return "products";
+    }
 }

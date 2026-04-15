@@ -12,4 +12,8 @@ public interface JerseyRepository extends JpaRepository<Jersey, Long> {
     List<Jersey> findByTeamNameContainingIgnoreCase(String teamName);
     
     List<Jersey> findTop8ByOrderByIdDesc();
+    
+    List<Jersey> findByLeagueId(Long leagueId);
+    
+    List<Jersey> findByBrandId(Long brandId);
 }
