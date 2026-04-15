@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="id" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Pesanan #ORD-<span th:text="${#numbers.formatInteger(order.id, 3)}">001</span> - myjersey</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#BD114A',
+                        secondary: '#1A1A2E',
+                        accent: '#547792',
+                    },
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 font-poppins min-h-screen flex flex-col">
+
+    <nav th:replace="~{fragments/header :: header}"></nav>
+
+    <div class="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- Breadcrumb -->
+        <div class="mb-6">
+            <nav class="flex text-sm text-gray-500">
+                <a href="/orders" class="hover:text-primary transition-colors flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Kembali ke Pesanan Saya
+                </a>
+            </nav>
+        </div>
+
+        <!-- Page Header -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-secondary">Detail Pesanan</h1>
+            <p class="text-gray-500 mt-1">#ORD-<span th:text="${#numbers.formatInteger(order.id, 3)}">001</span> - <span th:text="${#temporals.format(order.orderDate, 'dd MMMM yyyy, HH:mm')}">15 April 2024</span></p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Main Content - Items -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Order Items -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                        <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                            Item Pesanan
+                        </h2>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div th:each="item : ${order.items}" class="flex gap-4 pb-4 border-b border-gray-100 last:border-0 last:pb-0">
+                            <div class="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                <img th:if="${item.jersey.imageBase64 != null and !item.jersey.imageBase64.isEmpty()}" 
+                                     th:src="@{'data:image/png;base64,' + ${item.jersey.imageBase64}}" 
+                                     alt="Jersey" class="w-full h-full object-cover">
+                                <img th:unless="${item.jersey.imageBase64 != null and !item.jersey.imageBase64.isEmpty()}" 
+                                     src="https://images.unsplash.com/photo-1583316174775-bd6dc0e9f298?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80" 
+                                     alt="Jersey" class="w-full h-full object-cover">
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-gray-800" th:text="${item.jersey.name}">Jersey Name</h3>
+                                <p class="text-sm text-gray-500" th:text="${item.jersey.team != null ? item.jersey.team.name : '-'}">Team Name</p>
+                                <div class="mt-2 flex flex-wrap items-center gap-4 text-sm">
+                                    <span class="text-gray-600">Size: <span class="font-semibold" th:text="${item.size}">L</span></span>
+                                    <span class="text-gray-600">Qty: <span class="font-semibold" th:text="${item.quantity}">1</span></span>
+                                    <span class="text-gray-600">Harga: <span class="font-semibold text-primary">Rp <span th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 0, 'POINT')}">250.000</span></span></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Shipping Info -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                        <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                            </svg>
+                            Info Pengiriman
+                        </h2>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Kurir</p>
+                                <p class="font-medium text-gray-800" th:text="${order.courierName != null and !order.courierName.isEmpty() ? order.courierName : '-'}">JNE Express</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Ongkos Kirim</p>
+                                <p class="font-medium text-gray-800">
+                                    <span th:if="${order.shippingCost != null and order.shippingCost > 0}">Rp <span th:text="${#numbers.formatDecimal(order.shippingCost, 0, 'COMMA', 0, 'POINT')}">25.000</span></span>
+                                    <span th:unless="${order.shippingCost != null and order.shippingCost > 0}">-</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Nomor Resi</p>
+                            <p th:if="${order.shipment != null and order.shipment.trackingNumber != null and !order.shipment.trackingNumber.isEmpty()}" class="font-medium text-primary text-lg" th:text="${order.shipment.trackingNumber}">JP1234567890</p>
+                            <p th:unless="${order.shipment != null and order.shipment.trackingNumber != null and !order.shipment.trackingNumber.isEmpty()}" class="text-gray-400 italic">Belum tersedia</p>
+                        </div>
+                        <div th:if="${order.address != null}">
+                            <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Alamat Tujuan</p>
+                            <p class="font-medium text-gray-800" th:text="${order.address.title}">Rumah</p>
+                            <p class="text-sm text-gray-600" th:text="${order.address.fullAddress}">Jl. Contoh No. 123</p>
+                            <p class="text-sm text-gray-600" th:text="${order.address.city + (order.address.postalCode != null ? ' ' + order.address.postalCode : '')}">Jakarta 12345</p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- Sidebar - Summary & Status -->
+            <div class="space-y-6">
+                
+                <!-- Order Status -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                        <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Status Pesanan
+                        </h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="text-center">
+                            <!-- Status Badge -->
+                            <span th:if="${order.status.name() == 'PENDING'}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-yellow-100 text-yellow-800 mb-4">
+                                Menunggu Pembayaran
+                            </span>
+                            <span th:if="${order.status.name() == 'CONFIRMED'}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-blue-100 text-blue-800 mb-4">
+                                Pembayaran Diterima
+                            </span>
+                            <span th:if="${order.status.name() == 'PROCESSING'}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-indigo-100 text-indigo-800 mb-4">
+                                Sedang Diproses
+                            </span>
+                            <span th:if="${order.status.name() == 'SHIPPED'}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-purple-100 text-purple-800 mb-4">
+                                Sedang Dikirim
+                            </span>
+                            <span th:if="${order.status.name() == 'COMPLETED'}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-green-100 text-green-800 mb-4">
+                                Selesai
+                            </span>
+                            <span th:if="${order.status.name() == 'CANCELLED'}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-red-100 text-red-800 mb-4">
+                                Dibatalkan
+                            </span>
+                            <span th:if="${order.status.name() == 'RETURNED'}" class="inline-flex items-center px-4 py-2 rounded-full text-sm font-bold bg-orange-100 text-orange-800 mb-4">
+                                Dikembalikan
+                            </span>
+                            
+                            <!-- Status Timeline -->
+                            <div class="mt-6 text-left space-y-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-3 h-3 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Pesanan Dibuat</p>
+                                        <p class="text-xs text-gray-500" th:text="${#temporals.format(order.orderDate, 'dd MMM yyyy, HH:mm')}">15 Apr 2024, 14:30</p>
+                                    </div>
+                                </div>
+                                <div th:if="${order.status.name() == 'CONFIRMED' or order.status.name() == 'PROCESSING' or order.status.name() == 'SHIPPED' or order.status.name() == 'COMPLETED'}" class="flex items-start gap-3">
+                                    <div class="w-3 h-3 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Pembayaran Dikonfirmasi</p>
+                                        <p class="text-xs text-gray-500">Pembayaran telah diterima</p>
+                                    </div>
+                                </div>
+                                <div th:if="${order.status.name() == 'PROCESSING' or order.status.name() == 'SHIPPED' or order.status.name() == 'COMPLETED'}" class="flex items-start gap-3">
+                                    <div class="w-3 h-3 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Sedang Diproses</p>
+                                        <p class="text-xs text-gray-500">Jersey sedang disiapkan</p>
+                                    </div>
+                                </div>
+                                <div th:if="${order.status.name() == 'SHIPPED' or order.status.name() == 'COMPLETED'}" class="flex items-start gap-3">
+                                    <div class="w-3 h-3 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Telah Dikirim</p>
+                                        <p class="text-xs text-gray-500" th:text="${order.shipment?.trackingNumber != null ? 'Resi: ' + order.shipment.trackingNumber : ''}">Resi: JP1234567890</p>
+                                    </div>
+                                </div>
+                                <div th:if="${order.status.name() == 'COMPLETED'}" class="flex items-start gap-3">
+                                    <div class="w-3 h-3 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
+                                    <div>
+                                        <p class="text-sm font-medium text-gray-800">Pesanan Selesai</p>
+                                        <p class="text-xs text-gray-500">Jersey telah diterima</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order Summary -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                        <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            Ringkasan Pembayaran
+                        </h2>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Subtotal (<span th:text="${order.items.size()}">2</span> item)</span>
+                            <span class="text-gray-800">Rp <span th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 0, 'POINT')}">500.000</span></span>
+                        </div>
+                        <div th:if="${order.discountAmount != null and order.discountAmount > 0}" class="flex justify-between text-sm">
+                            <span class="text-green-600">Diskon</span>
+                            <span class="text-green-600">- Rp <span th:text="${#numbers.formatDecimal(order.discountAmount, 0, 'COMMA', 0, 'POINT')}">50.000</span></span>
+                        </div>
+                        <div th:if="${order.promoCode != null}" class="flex justify-between text-sm">
+                            <span class="text-gray-600">Kode Promo: <span class="font-medium text-accent" th:text="${order.promoCode.code}">HEMAT10</span></span>
+                            <span></span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-600">Ongkos Kirim</span>
+                            <span class="text-gray-800">
+                                <span th:if="${order.shippingCost != null and order.shippingCost > 0}">Rp <span th:text="${#numbers.formatDecimal(order.shippingCost, 0, 'COMMA', 0, 'POINT')}">25.000</span></span>
+                                <span th:unless="${order.shippingCost != null and order.shippingCost > 0}">-</span>
+                            </span>
+                        </div>
+                        <div class="pt-3 border-t border-gray-200">
+                            <div class="flex justify-between">
+                                <span class="font-semibold text-gray-800">Total Bayar</span>
+                                <span class="font-bold text-xl text-primary">Rp <span th:text="${#numbers.formatDecimal(order.finalPrice != null ? order.finalPrice : order.totalPrice, 0, 'COMMA', 0, 'POINT')}">475.000</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-gray-400 py-8 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <p class="text-sm">&copy; 2024 myjersey. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

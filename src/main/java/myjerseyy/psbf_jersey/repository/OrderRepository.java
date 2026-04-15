@@ -31,4 +31,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     
     @Query("SELECT DISTINCT o FROM Order o LEFT JOIN FETCH o.items WHERE o.status = :status")
     List<Order> findByStatusWithItems(@Param("status") myjerseyy.psbf_jersey.entity.OrderStatus status);
+    
+    List<Order> findByCustomerIdOrderByOrderDateDesc(Long userId);
 }
