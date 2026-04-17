@@ -67,7 +67,12 @@
                 <!-- Product Info -->
                 <div class="flex flex-col">
                     <p class="text-sm text-gray-500 mb-2" th:text="${jersey.team?.name} ?: 'Unknown Team'">Team Name</p>
-                    <h1 class="text-3xl font-bold text-secondary mb-4" th:text="${jersey.name}">Jersey Name</h1>
+                    <div class="flex items-center gap-3 mb-4">
+                        <img th:if="${jersey.team != null and jersey.team.logo != null and !jersey.team.logo.isEmpty()}" 
+                             th:src="@{'data:image/png;base64,' + ${jersey.team.logo}}" 
+                             class="w-8 h-8 object-contain flex-shrink-0" alt="">
+                        <h1 class="text-3xl font-bold text-secondary" th:text="${jersey.name}">Jersey Name</h1>
+                    </div>
                     
                     <div class="flex items-center gap-4 mb-6">
                         <span class="text-xs px-3 py-1 bg-gray-100 text-gray-600 rounded-full" th:text="${jersey.brand?.name} ?: 'Unknown'">Brand</span>

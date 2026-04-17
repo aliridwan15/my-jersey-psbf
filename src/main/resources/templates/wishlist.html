@@ -103,7 +103,12 @@
                 <!-- Product Info -->
                 <div class="p-4">
                     <p class="text-xs text-gray-500 mb-1" th:text="${item.jersey.league?.name}">Premier League</p>
-                    <h3 class="font-semibold text-secondary line-clamp-2 mb-2" th:text="${item.jersey.name}">Manchester United Home Jersey 2024</h3>
+                    <div class="flex items-start gap-2 mb-2">
+                        <img th:if="${item.jersey.team != null and item.jersey.team.logo != null and !item.jersey.team.logo.isEmpty()}" 
+                             th:src="@{'data:image/png;base64,' + ${item.jersey.team.logo}}" 
+                             class="w-5 h-5 object-contain mt-0.5 flex-shrink-0" alt="">
+                        <h3 class="font-semibold text-secondary line-clamp-2" th:text="${item.jersey.name}">Manchester United Home Jersey 2024</h3>
+                    </div>
                     <p class="text-xs text-gray-500 mb-2" th:text="${item.jersey.brand?.name}">Nike</p>
                     
                     <div class="flex items-center justify-between">
