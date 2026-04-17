@@ -142,7 +142,7 @@
             
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                 <a th:each="league : ${leagues}" 
-                   th:href="@{/products(league=${league.id})}" 
+                   th:href="@{/products(leagueId=${league.id})}" 
                    class="category-card group flex flex-col items-center justify-center bg-gray-100 rounded-xl p-6 text-center hover:bg-primary hover:text-white transition-all duration-300 cursor-pointer">
                     <div class="w-16 h-16 mx-auto mb-3 bg-white rounded-full flex items-center justify-center shadow-md group-hover:bg-white/90 transition-colors">
                         <img th:if="${league.logo}" th:src="${league.logo}" alt="${league.name}" class="w-10 h-10 object-contain">
@@ -170,7 +170,7 @@
             
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
                 <a th:each="brand : ${brands}" 
-                   th:href="@{/products(brand=${brand.id})}" 
+                   th:href="@{/products(brandId=${brand.id})}" 
                    class="card-hover bg-white rounded-xl p-6 flex items-center justify-center shadow-sm hover:shadow-lg">
                     <div th:if="${brand.logo != null and brand.logo.length > 0}">
                         <img th:src="@{'data:image/*;base64,' + ${brand.logoBase64}}" 

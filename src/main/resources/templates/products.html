@@ -111,8 +111,17 @@
                     <div class="space-y-2">
                         <a th:href="@{/products(brandId=${brand.id})}" 
                            th:each="brand : ${brands}"
-                           class="filter-btn flex items-center gap-3 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">
-                            <span class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center text-xs font-bold text-gray-500" th:text="${#strings.substring(brand.name, 0, 1)}">B</span>
+                           class="filter-btn flex items-center gap-3 px-3 py-2 rounded-lg transition-colors"
+                           th:classappend="${selectedBrand != null and selectedBrand.id == brand.id} ? 'bg-primary/10 text-primary font-medium' : 'text-gray-600 hover:bg-gray-100'">
+                            <span class="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center overflow-hidden">
+                                <img th:if="${brand.logoBase64 != null and !brand.logoBase64.isEmpty()}" 
+                                     th:src="@{'data:image/png;base64,' + ${brand.logoBase64}}" 
+                                     th:alt="${brand.name}" 
+                                     class="w-full h-full object-contain p-0.5">
+                                <span th:unless="${brand.logoBase64 != null and !brand.logoBase64.isEmpty()}" 
+                                      class="text-xs font-bold text-gray-500" 
+                                      th:text="${#strings.substring(brand.name, 0, 1)}">B</span>
+                            </span>
                             <span th:text="${brand.name}">Brand Name</span>
                         </a>
                     </div>
